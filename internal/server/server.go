@@ -20,7 +20,7 @@ func (s* Server)Start(){
 	if err != nil {
 	fmt.Println("Error accepting connection: ", err.Error())
 	conn.Write([]byte("+PONG\r\n"))
-	os.Exit(1)
+	
 }
 }
 
