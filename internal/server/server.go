@@ -18,10 +18,9 @@ func (s* Server)Start(){
 	}
 	conn, err := l.Accept()
 	if err != nil {
-	fmt.Println("Error accepting connection: ", err.Error())
+		fmt.Println("Error accepting connection: ", err.Error())
+		os.Exit(1)}
 	conn.Write([]byte("+PONG\r\n"))
-	
-}
 }
 
 func NewServer(address string) *Server {
