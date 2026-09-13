@@ -14,6 +14,7 @@ func handleconnection(conn net.Conn){
 	
 	readBuffer := make([]byte, 1024)
 	pending := make([]byte, 0)
+	m := make(map[string]string)
 
 	for {
 		n, err := conn.Read(readBuffer)
@@ -33,6 +34,7 @@ func handleconnection(conn net.Conn){
 
 		comm := strings.ToUpper(commands[0])
 
+
 		switch comm {
 			case "PING":
 				//result  := command.HandlePingCommand()
@@ -43,6 +45,17 @@ func handleconnection(conn net.Conn){
 				result := command.HandleechoCommand(commands)
 				response := protocol.Response_bulk_string(result)
 				conn.Write([]byte(response))
+			case "SET":
+				m[commands[1]] = commands[2]
+				conn.Write([]byte("+OK\r\n"))
+			case "GET":
+				m[commands[1]], ok = m[commands[1]]
+				if !ok {
+					conn.Write([]byte("$-1\r\n"))
+				} else {
+					response := protocol.Response_bulk_string(m[commands[1]])
+					conn.Write([]byte(response))
+				}
 			default:
 				conn.Write([]byte("+PONG\r\n"))
 		}
