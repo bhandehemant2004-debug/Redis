@@ -35,9 +35,10 @@ func handleconnection(conn net.Conn){
 
 		switch comm {
 			case "PING":
-				result  := command.HandlePingCommand()
-				response := protocol.Response_bulk_string(result)
-				conn.Write([]byte(response))
+				//result  := command.HandlePingCommand()
+				//response := protocol.Response_bulk_string(result)
+				//conn.Write([]byte(response))
+				conn.Write([]byte("+PONG\r\n"))
 			case "ECHO":
 				result := command.HandleechoCommand(commands)
 				response := protocol.Response_bulk_string(result)
