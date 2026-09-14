@@ -49,5 +49,6 @@ func (s* Server)Start(){
 func NewServer(address string) *Server {
     return &Server{
        port_addr: address,
+	   mpp: make(map[string]util.Redisobj),
     }
 }
