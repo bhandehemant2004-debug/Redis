@@ -11,7 +11,7 @@ func HandleSetCommand(args []string) (util.Redisobj) {
 	value := args[2]
 	if len(args) > 3 && args[3] == "EX" {
 		seconds , err := strconv.Atoi(args[4])
-		if err != nil {
+		if err == nil {
 			return util.Redisobj{
 				Value:   value,
 				Expiryat: time.Now().Add(time.Duration(seconds) * time.Second),
@@ -21,7 +21,7 @@ func HandleSetCommand(args []string) (util.Redisobj) {
 	}	
 	if len(args) > 3 && args[3] == "PX" {
 		milliseconds , err := strconv.Atoi(args[4])
-		if err != nil {
+		if err == nil {
 			return util.Redisobj{
 				Value:   value,
 				Expiryat: time.Now().Add(time.Duration(milliseconds) * time.Millisecond),
