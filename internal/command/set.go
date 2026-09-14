@@ -9,7 +9,7 @@ import (
 
 func HandleSetCommand(args []string) (util.Redisobj) {
 	value := args[2]
-	if len(args) > 3 && args[3] == "EX" {
+	if len(args) > 4 && args[3] == "EX" {
 		seconds , err := strconv.Atoi(args[4])
 		if err == nil {
 			return util.Redisobj{
@@ -19,7 +19,7 @@ func HandleSetCommand(args []string) (util.Redisobj) {
 			}
 		}
 	}	
-	if len(args) > 3 && args[3] == "PX" {
+	if len(args) > 4 && args[3] == "PX" {
 		milliseconds , err := strconv.Atoi(args[4])
 		if err == nil {
 			return util.Redisobj{
