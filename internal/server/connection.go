@@ -6,15 +6,16 @@ import (
 
 	"github.com/codecrafters-io/redis-starter-go/internal/command"
 	"github.com/codecrafters-io/redis-starter-go/internal/protocol"
+	"github.com/codecrafters-io/redis-starter-go/internal/util"
 )
 
 
-func handleconnection(conn net.Conn){
+func handleconnection(conn net.Conn,server *Server){
 	defer conn.Close()
 	
 	readBuffer := make([]byte, 1024)
 	pending := make([]byte, 0)
-	m := make(map[string]string)
+	
 
 	for {
 		n, err := conn.Read(readBuffer)
@@ -46,7 +47,7 @@ func handleconnection(conn net.Conn){
 				response := protocol.Response_bulk_string(result)
 				conn.Write([]byte(response))
 			case "SET":
-				m[commands[1]] = commands[2]
+				
 				conn.Write([]byte("+OK\r\n"))
 			case "GET":
 				m[commands[1]], ok = m[commands[1]]

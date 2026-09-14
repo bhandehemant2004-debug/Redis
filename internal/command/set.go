@@ -1,9 +1,14 @@
-package command 
+package command
 
+import (
+	"github.com/codecrafters-io/redis-starter-go/internal/util"
 
-func HandleSetCommand(args []string) string {
-	if len(args) != 2 {
-		return "ERR wrong number of arguments for 'set' command"
+)
+func HandleSetCommand(args []string,server *Server) string {
+	
+	obj util.Redisobj := util.Redisobj{
+
 	}
+	server.set("",)
 	return "OK"
 }
