@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/internal/util"
 )
@@ -12,11 +13,20 @@ type  Server struct{
 	port_addr string
 	mpp map[string]util.Redisobj
 }
-func (s* Server )Set(key string , value util.Redisobj ){
+func (s* Server )Set(key string ,  value util.Redisobj )(string ,bool){
 	s.mpp[key]=value;
+	return "+OK\r\n",true
 }
-func (s * Server)Get(key string )util.Redisobj{
-	return s.mpp[key]
+func (s * Server)Get(key string )(util.Redisobj,bool){
+	obj, exists := s.mpp[key]
+	if !exists {
+		return util.Redisobj{}, false
+	}
+	if obj.Expiry && obj.Expiryat.Before(time.Now()) {
+			delete(s.mpp, key)
+			return util.Redisobj{}, false
+	}
+	return obj, true
 }
 func (s* Server)Start(){
 	l, err := net.Listen("tcp", s.port_addr)

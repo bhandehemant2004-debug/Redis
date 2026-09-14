@@ -5,7 +5,7 @@ import "time"
 
 type Redisobj struct{
 
-	value string 
-	expiryat time.Time
-	expirty bool
+	Value string 
+	Expiryat time.Time
+	Expiry bool
 }

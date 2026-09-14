@@ -6,7 +6,7 @@ import (
 
 	"github.com/codecrafters-io/redis-starter-go/internal/command"
 	"github.com/codecrafters-io/redis-starter-go/internal/protocol"
-	"github.com/codecrafters-io/redis-starter-go/internal/util"
+	
 )
 
 
@@ -47,14 +47,18 @@ func handleconnection(conn net.Conn,server *Server){
 				response := protocol.Response_bulk_string(result)
 				conn.Write([]byte(response))
 			case "SET":
-				
-				conn.Write([]byte("+OK\r\n"))
-			case "GET":
-				m[commands[1]], ok = m[commands[1]]
+				result , ok := server.Set(commands[1],command.HandleSetCommand(commands))
 				if !ok {
 					conn.Write([]byte("$-1\r\n"))
 				} else {
-					response := protocol.Response_bulk_string(m[commands[1]])
+					conn.Write([]byte(result))
+				}
+			case "GET":
+				m,ok := server.Get(commands[1])
+				if !ok {
+					conn.Write([]byte("$-1\r\n"))
+				} else {
+					response := protocol.Response_bulk_string(m.Value)
 					conn.Write([]byte(response))
 				}
 			default:
