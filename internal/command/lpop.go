@@ -9,7 +9,7 @@ import (
 func HandleLpopCommand(args []string, storage store.Storage)[]string{
 	
 	key := args[1];
-	elements := 0  ;
+	elements := 1  ;
 	if len(args)>2{
 		elements,_ = strconv.Atoi(args[2])
 	}
@@ -23,13 +23,12 @@ func HandleLpopCommand(args []string, storage store.Storage)[]string{
 	list := obj.Value.([]string)
 
 	result := make([]string,0)
-
+	elements = min(elements,len(list))
 	for i := 0 ;i<elements;i++{
-		str := list[0];
-		list = list[1:]
-		result = append(result, str)
+		result = append(result,list[i])
 	}
+	list = list[elements:]
 	obj.Value = list
-
+	storage.Set(key,obj)
 	return result
 }
