@@ -66,7 +66,9 @@ func handleconnection(conn net.Conn, server *Server) {
 				conn.Write([]byte(respond))		
 				
 			case "LRANGE":
-				
+				result := command.HandleLrangeCommand(commands,server.storage)
+				respond := protocol.ResponseArray(result)
+				conn.Write([]byte(respond))
 			default:
 				conn.Write([]byte("+PONG\r\n"))
 		}
