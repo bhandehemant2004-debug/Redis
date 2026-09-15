@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"fmt"
 	"strconv"
 )
 
@@ -81,4 +82,7 @@ func Response_bulk_string(s string)[]byte{
 	result = append(result, '\r', '\n')
 
 	return result
+}
+func AppendInteger(value int) []byte {
+    return []byte(fmt.Sprintf(":%d\r\n", value))
 }

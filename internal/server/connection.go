@@ -10,7 +10,7 @@ import (
 )
 
 
-func handleconnection(conn net.Conn,server *Server){
+func handleconnection(conn net.Conn, server *Server) {
 	defer conn.Close()
 	
 	readBuffer := make([]byte, 1024)
@@ -38,29 +38,32 @@ func handleconnection(conn net.Conn,server *Server){
 
 		switch comm {
 			case "PING":
-				//result  := command.HandlePingCommand()
-				//response := protocol.Response_bulk_string(result)
-				//conn.Write([]byte(response))
 				conn.Write([]byte("+PONG\r\n"))
 			case "ECHO":
 				result := command.HandleechoCommand(commands)
 				response := protocol.Response_bulk_string(result)
 				conn.Write([]byte(response))
 			case "SET":
-				result , ok := server.Set(commands[1],command.HandleSetCommand(commands))
-				if !ok {
-					conn.Write([]byte("$-1\r\n"))
-				} else {
+				result,ok := command.HandleSetCommand(commands,server.storage)
+				if ok {
 					conn.Write([]byte(result))
 				}
+				
 			case "GET":
-				m,ok := server.Get(commands[1])
+				result,ok := command.HandgetCommand(commands,server.storage)
 				if !ok {
 					conn.Write([]byte("$-1\r\n"))
-				} else {
-					response := protocol.Response_bulk_string(m.Value)
-					conn.Write([]byte(response))
 				}
+		
+				switch result.Type{
+					case "string":
+					conn.Write([]byte(protocol.Response_bulk_string(result.Value.(string))))
+					}
+			
+			case "RPUSH":
+				result := command.HandleRpushCommand(commands,server.storage)
+				respond := protocol.AppendInteger(result)
+				conn.Write([]byte(respond))				
 			default:
 				conn.Write([]byte("+PONG\r\n"))
 		}
