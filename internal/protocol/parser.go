@@ -86,3 +86,13 @@ func Response_bulk_string(s string)[]byte{
 func AppendInteger(value int) []byte {
     return []byte(fmt.Sprintf(":%d\r\n", value))
 }
+
+func ResponseArray(values []string) string {
+    result := fmt.Sprintf("*%d\r\n", len(values))
+
+    for _, value := range values {
+        result += fmt.Sprintf("$%d\r\n%s\r\n", len(value), value)
+    }
+
+    return result
+}

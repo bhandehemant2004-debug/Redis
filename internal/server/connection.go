@@ -63,7 +63,10 @@ func handleconnection(conn net.Conn, server *Server) {
 			case "RPUSH":
 				result := command.HandleRpushCommand(commands,server.storage)
 				respond := protocol.AppendInteger(result)
-				conn.Write([]byte(respond))				
+				conn.Write([]byte(respond))		
+				
+			case "LRANGE":
+				
 			default:
 				conn.Write([]byte("+PONG\r\n"))
 		}
