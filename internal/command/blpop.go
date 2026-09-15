@@ -46,7 +46,7 @@ func HandleBlpopCommand(commands []string , storage store.Storage)[]string{
 			storage.Deleteblocking(key)
     		return []string{key , result}
 
-		case <-time.After(time.Duration(timeout) * time.Second):
+		case <-time.After(time.Duration(timeout * float64(time.Second))):
 			storage.Deleteblocking(key)
     		return []string{}
 	}
