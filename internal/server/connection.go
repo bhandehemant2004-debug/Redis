@@ -80,7 +80,7 @@ func handleconnection(conn net.Conn, server *Server) {
 				result := command.HandleLpopCommand(commands,server.storage)
 				if len(commands)==2{
 					if len(result)==0{
-						conn.Write([]byte("$-1\r\n"))
+						conn.Write([]byte("*-1\r\n"))
 						continue
 					}
 					response := protocol.Response_bulk_string(result[0])
