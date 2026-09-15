@@ -77,6 +77,10 @@ func handleconnection(conn net.Conn, server *Server) {
 				result := command.HandleLlenCommand(commands,server.storage)
 				respond := protocol.AppendInteger(result)
 				conn.Write([]byte(respond))
+			case "LPOP":
+				result := command.HandleLpopCommand(commands,server.storage)
+				respond := protocol.ResponseArray(result)
+				conn.Write([]byte(respond))
 			default:
 				conn.Write([]byte("+PONG\r\n"))
 		}
