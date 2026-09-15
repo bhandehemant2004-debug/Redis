@@ -34,14 +34,14 @@ func HandleBlpopCommand(commands []string , storage store.Storage)[]string{
 		
 		result := <-waiter.Ch
 		storage.Deleteblocking(key)
-		return []string{result}
+		return []string{key,result}
 
 		}
 
 	select {
 		case result := <-waiter.Ch:
 			storage.Deleteblocking(key)
-    		return []string{result}
+    		return []string{key , result}
 
 		case <-time.After(time.Duration(timeout) * time.Second):
 			storage.Deleteblocking(key)
