@@ -18,14 +18,17 @@ func HandleBlpopCommand(commands []string , storage store.Storage)[]string{
 		if len(list)>0{
 			ans = append(ans, list[0])
 			list = list[1:]
-			obj.Value=ans
+			obj.Value=list
 			storage.Set(key,obj)
 			return ans
 		}
 	}
-	timeout := 0 
+	timeout := float64(0)
 	if len(commands)>2{
-		timeout,_ = strconv.Atoi(commands[2])
+		time, err := strconv.ParseFloat(commands[2], 64)
+		if err == nil {
+			timeout = time 
+		}
 	}
 	storage.AddBlocking(key,util.NewWaiter())
 	waiters,_ := storage.GetBlocking(key)	
