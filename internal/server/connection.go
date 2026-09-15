@@ -94,6 +94,7 @@ func handleconnection(conn net.Conn, server *Server) {
 				result := command.HandleBlpopCommand(commands,server.storage)
 				if len(result)==0 {
 					conn.Write([]byte("$-1\r\n"))
+					continue
 				}
 				response := protocol.ResponseArray(result)
 				conn.Write([]byte(response))
