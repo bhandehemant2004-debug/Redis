@@ -13,16 +13,21 @@ type Storage interface {
 	Exists(key string) bool
 	Keys() []string
 	GetAddress(key string)(*util.Redisobj,bool)
+	AddBlocking(key string,waiter *util.Waiter)()
+	GetBlocking(key string)([]*util.Waiter, bool)
+	Deleteblocking(key string)()
 }
 
 
 type MemoryStorage struct {
 	data map[string]util.Redisobj
+	blocked map[string][]*util.Waiter
 }
 
 func NewMemoryStorage() *MemoryStorage {
 	return &MemoryStorage{
 		data: make(map[string]util.Redisobj),
+		blocked: make(map[string][]*util.Waiter),
 	}
 }
 
@@ -74,4 +79,19 @@ func (s *MemoryStorage) Keys() []string {
 		keys = append(keys, key)
 	}
 	return keys
+}
+
+func (s *MemoryStorage) AddBlocking(key string, waiter *util.Waiter) {
+    s.blocked[key] = append(s.blocked[key], waiter)
+}
+func (s *MemoryStorage) GetBlocking(key string) ([]*util.Waiter, bool) {
+    waiters, exists := s.blocked[key]
+    return waiters, exists
+}
+
+func (s *MemoryStorage)Deleteblocking(key string){
+	_ , exists := s.blocked[key]
+	if exists{
+		delete(s.blocked,key)
+	}
 }

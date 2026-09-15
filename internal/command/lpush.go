@@ -33,6 +33,13 @@ func HandleLpushCommand(args []string,storage store.Storage) int {
     obj.Value = newlist
 
     storage.Set(key, obj)
+    
+    waiters,status := storage.GetBlocking(key)
+
+    if status{
+        waiter := waiters[0]
+        waiter.Ch<-obj.Value.([]string)[0]
+    }
 
 	return len(newlist)
 

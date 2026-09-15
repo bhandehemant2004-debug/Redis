@@ -6,7 +6,6 @@ import (
 
 	"github.com/codecrafters-io/redis-starter-go/internal/command"
 	"github.com/codecrafters-io/redis-starter-go/internal/protocol"
-	
 )
 
 
@@ -89,6 +88,10 @@ func handleconnection(conn net.Conn, server *Server) {
 					continue
 					
 				}
+				response := protocol.ResponseArray(result)
+				conn.Write([]byte(response))
+			case "BLPOP":
+				result := command.HandleBlpopCommand(commands,server.storage)
 				response := protocol.ResponseArray(result)
 				conn.Write([]byte(response))
 			default:
