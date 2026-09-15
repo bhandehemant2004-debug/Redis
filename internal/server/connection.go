@@ -73,6 +73,10 @@ func handleconnection(conn net.Conn, server *Server) {
 				result := command.HandleLpushCommand(commands,server.storage)
 				respond := protocol.AppendInteger(result)
 				conn.Write([]byte(respond))
+			case "LLEN":
+				result := command.HandleLlenCommand(commands,server.storage)
+				respond := protocol.AppendInteger(result)
+				conn.Write([]byte(respond))
 			default:
 				conn.Write([]byte("+PONG\r\n"))
 		}
