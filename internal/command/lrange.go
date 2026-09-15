@@ -20,9 +20,15 @@ func HandleLrangeCommand(args []string,storage store.Storage)[]string{
 	if err != nil{
 		start = 0
 	}
+	if start<0{
+		start = max(0,len(obj.Value.([]string))-start)
+	}
 	end,err := strconv.Atoi(args[3])
 	if err != nil{
 		end = 0 
+	}
+	if end < 0{
+		end = max(0,len(obj.Value.([]string))-end)
 	}
 
 
