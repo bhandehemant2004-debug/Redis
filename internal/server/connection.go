@@ -92,6 +92,9 @@ func handleconnection(conn net.Conn, server *Server) {
 				conn.Write([]byte(response))
 			case "BLPOP":
 				result := command.HandleBlpopCommand(commands,server.storage)
+				if len(result)==0 {
+					conn.Write([]byte("$-1\r\n"))
+				}
 				response := protocol.ResponseArray(result)
 				conn.Write([]byte(response))
 			default:
