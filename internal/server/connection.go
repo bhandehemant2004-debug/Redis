@@ -98,6 +98,9 @@ func handleconnection(conn net.Conn, server *Server) {
 				}
 				response := protocol.ResponseArray(result)
 				conn.Write([]byte(response))
+			case "TYPE":
+				response := command.HandleTypeCommand(commands,server.storage)
+				conn.Write([]byte(response))
 			default:
 				conn.Write([]byte("+PONG\r\n"))
 		}
