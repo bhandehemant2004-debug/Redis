@@ -9,9 +9,10 @@ type node struct {
 	hasValue bool
 }
 
-type Tree struct{ root *node }
+type Tree struct{ root *node 
+	size int}
 
-func New() *Tree { return &Tree{root: &node{}} }
+func New() *Tree { return &Tree{root: &node{},size: 0} }
 
 func commonPrefix(a, b []byte) int {
 	i := 0
@@ -25,6 +26,9 @@ func (t *Tree) Insert(key []byte, val any) {
 	n := t.root
 	for {
 		if len(key) == 0 {
+			if !n.hasValue{
+				t.size++
+			}
 			n.value, n.hasValue = val, true
 			return
 		}
@@ -38,6 +42,7 @@ func (t *Tree) Insert(key []byte, val any) {
 		if idx == -1 {
 			child := &node{prefix: append([]byte(nil), key...), value: val, hasValue: true}
 			n.addChild(child)
+			t.size++
 			return
 		}
 		c := n.children[idx]
@@ -79,9 +84,9 @@ func (n *node) walk(acc, bound []byte, bounded bool, fn func([]byte, any) bool) 
 		m := min(len(n.prefix), len(bound))
 		switch c := bytes.Compare(n.prefix[:m], bound[:m]); {
 		case c < 0:
-			return true // whole subtree is below the bound
+			return true 
 		case c > 0:
-			bounded = false // whole subtree is above
+			bounded = false 
 		default:
 			if len(n.prefix) >= len(bound) {
 				bounded = false
@@ -116,6 +121,8 @@ func (t *Tree) Floor(k []byte) (key []byte, val any, ok bool) {
 	})
 	return best, bestVal, found
 }
+
+
 func (t *Tree) Last() ([]byte, any, bool) {
     n := t.root
     var key []byte
@@ -133,4 +140,8 @@ func (t *Tree) Last() ([]byte, any, bool) {
 
         return nil, nil, false
     }
+}
+
+func (t *Tree)Size()int{
+	return t.size
 }

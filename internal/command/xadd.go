@@ -1,6 +1,7 @@
 package command
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/codecrafters-io/redis-starter-go/internal/obj"
@@ -28,9 +29,13 @@ func HandleXaddCommand(commands []string , storage store.Storage)(string,bool){
 
 	last_entry_key,_,ok :=tree.Last() 
 
+	
+
 	if entry_key == "0-0" {
-    	return "ERR The ID specified in XADD must be greater than 0-0", true}
-	if(ok && strings.Compare(entry_key,string(last_entry_key))<=0){
+    	return "ERR The ID specified in XADD must be greater than 0-0", true
+	}else if strings.HasSuffix(entry_key,"*"){
+		entry_key,_ = validateID(key,string(last_entry_key))
+	}else if(ok && strings.Compare(entry_key,string(last_entry_key))<=0){
 		return "ERR The ID specified in XADD is equal or smaller than the target stream top item",true
 	}
 	Entry := obj.NewEntry()
@@ -46,3 +51,34 @@ func HandleXaddCommand(commands []string , storage store.Storage)(string,bool){
 
 	return entry_key,false
 }
+
+func validateID(id, lastID string) (string, bool) {
+	toValidate := strings.Split(id, "-")
+	validator := strings.Split(lastID, "-")
+	ms1, _ := strconv.Atoi(toValidate[0])
+	ms2, _ := strconv.Atoi(validator[0])
+
+	seq2, _ := strconv.Atoi(validator[1])
+	if toValidate[1] == "*" {
+		if ms1 == ms2 {
+			toValidate[1] = strconv.Itoa(seq2 + 1)
+		} else if ms1 == 0 {
+			toValidate[1] = "1"
+		} else {
+			toValidate[1] = "0"
+		}
+	}
+	seq1, _ := strconv.Atoi(toValidate[1])
+
+	id = toValidate[0] + "-" + toValidate[1]
+	if ms1 < ms2 {
+		return id, false
+	}
+
+	if ms1 == ms2 && seq1 <= seq2 {
+		return id, false
+	}
+
+	return id, true
+}
+
