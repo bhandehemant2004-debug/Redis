@@ -1,8 +1,10 @@
 package command
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/internal/obj"
 	"github.com/codecrafters-io/redis-starter-go/internal/store"
@@ -30,8 +32,9 @@ func HandleXaddCommand(commands []string , storage store.Storage)(string,bool){
 	last_entry_key,_,ok :=tree.Last() 
 
 	
-
-	if entry_key == "0-0" {
+	if entry_key == "*"{
+		return fmt.Sprintf("%d-%d", time.Now().UnixMilli(), 0),false
+	}else if entry_key == "0-0" {
     	return "ERR The ID specified in XADD must be greater than 0-0", true
 	} else if strings.HasSuffix(entry_key, "*") {
     	if ok {
@@ -39,9 +42,10 @@ func HandleXaddCommand(commands []string , storage store.Storage)(string,bool){
     	} else {
         	entry_key = generateFirstID(entry_key)
     }
-}else if(ok && strings.Compare(entry_key,string(last_entry_key))<=0){
+	}else if(ok && strings.Compare(entry_key,string(last_entry_key))<=0){
 		return "ERR The ID specified in XADD is equal or smaller than the target stream top item",true
-	}
+		}
+		
 	Entry := obj.NewEntry()
 
 	Entry.AddEntry(commands[3:])
