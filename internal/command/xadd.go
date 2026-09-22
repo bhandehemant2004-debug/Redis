@@ -35,5 +35,5 @@ func HandleXaddCommand(commands []string , storage store.Storage)string{
 
 
 
-	return key
+	return entry_key
 }
