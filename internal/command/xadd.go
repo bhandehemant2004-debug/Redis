@@ -20,7 +20,7 @@ func HandleXaddCommand(commands []string , storage store.Storage)string{
 		object = util.NewRedisobj("stream",stream.New())
 	}
 
-	tree := object.Value.(stream.Tree)
+	tree := object.Value.(*stream.Tree)
 
 	entry_key := commands[2]
 
