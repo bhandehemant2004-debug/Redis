@@ -116,3 +116,21 @@ func (t *Tree) Floor(k []byte) (key []byte, val any, ok bool) {
 	})
 	return best, bestVal, found
 }
+func (t *Tree) Last() ([]byte, any, bool) {
+    n := t.root
+    var key []byte
+
+    for {
+        key = append(key, n.prefix...)
+
+        if len(n.children) > 0 {
+            n = n.children[len(n.children)-1]
+            continue
+        }
+        if n.hasValue {
+            return key, n.value, true
+        }
+
+        return nil, nil, false
+    }
+}
