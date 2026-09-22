@@ -34,7 +34,7 @@ func HandleXaddCommand(commands []string , storage store.Storage)(string,bool){
 	if entry_key == "0-0" {
     	return "ERR The ID specified in XADD must be greater than 0-0", true
 	}else if strings.HasSuffix(entry_key,"*"){
-		entry_key,_ = validateID(key,string(last_entry_key))
+		entry_key,_ = validateID(entry_key,string(last_entry_key))
 	}else if(ok && strings.Compare(entry_key,string(last_entry_key))<=0){
 		return "ERR The ID specified in XADD is equal or smaller than the target stream top item",true
 	}
