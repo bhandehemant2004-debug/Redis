@@ -87,6 +87,9 @@ func validateID(id, lastID string) (string, bool) {
 }
 func generateFirstID(key string)string{
 	val := strings.Split(key, "-");
+	if val[0]=="0"{
+		return val[0]+"-1"
+	}
 	return val[0]+"-0"
 }
 
