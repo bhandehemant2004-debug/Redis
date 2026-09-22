@@ -10,7 +10,7 @@ import (
 )
 
 
-func HandleXaddCommand(commands []string , storage store.Storage)string{
+func HandleXaddCommand(commands []string , storage store.Storage)(string,bool){
 	
 
 	key := commands[1]
@@ -29,7 +29,7 @@ func HandleXaddCommand(commands []string , storage store.Storage)string{
 	last_entry_key,_,ok :=tree.Last() 
 
 	if(ok && strings.Compare(string(last_entry_key),entry_key)>0){
-		return "(error) ERR The ID specified in XADD is equal or smaller than the target stream top item"
+		return "(error) ERR The ID specified in XADD is equal or smaller than the target stream top item",false
 	}
 	Entry := obj.NewEntry()
 
@@ -42,5 +42,5 @@ func HandleXaddCommand(commands []string , storage store.Storage)string{
 
 
 
-	return entry_key
+	return entry_key,true
 }

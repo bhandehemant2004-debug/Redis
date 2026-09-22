@@ -96,3 +96,6 @@ func ResponseArray(values []string) string {
 
     return result
 }
+func SimpleError(error string)string{
+	return "-"+error+"\r\n"
+}

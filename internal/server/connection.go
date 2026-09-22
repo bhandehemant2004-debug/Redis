@@ -103,9 +103,18 @@ func handleconnection(conn net.Conn, server *Server) {
 				conn.Write([]byte(response))
 
 			case "XADD":
-				result := command.HandleXaddCommand(commands,server.storage)
+				result,error := command.HandleXaddCommand(commands,server.storage)
+				if error {
+					response := protocol.SimpleError(result);
+					conn.Write([]byte(response))
+					continue
+				}
+				
 				response := protocol.Response_bulk_string(result)
 				conn.Write([]byte(response))
+				
+
+				
 			default:
 				conn.Write([]byte("+PONG\r\n"))
 		}
