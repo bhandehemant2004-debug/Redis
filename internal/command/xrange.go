@@ -14,6 +14,9 @@ func HandleXrangeCommand(commands []string , storage store.Storage)[]*obj.Entry{
 	start := commands[2]
 	end := commands[3]
 
+	if end == "+" {
+	end = "18446744073709551615-18446744073709551615"
+}
 	redisobj, exists := storage.Get(key)
 
 	if !exists{}
