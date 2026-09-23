@@ -44,9 +44,8 @@ func HandleXaddCommand(commands []string , storage store.Storage)(string,bool){
     }
 	}else if(ok && strings.Compare(entry_key,string(last_entry_key))<=0){
 		return "ERR The ID specified in XADD is equal or smaller than the target stream top item",true
-		}
-		
-	Entry := obj.NewEntry()
+	}
+	Entry := obj.NewEntry([]byte(entry_key))
 
 	Entry.AddEntry(commands[3:])
 

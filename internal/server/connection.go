@@ -112,9 +112,11 @@ func handleconnection(conn net.Conn, server *Server) {
 				
 				response := protocol.Response_bulk_string(result)
 				conn.Write([]byte(response))
-				
-
-				
+			
+			case "XRANGE":
+				result := command.HandleXrangeCommand(commands,server.storage)
+				response := protocol.ResponseXRange(result)
+				conn.Write([]byte(response))
 			default:
 				conn.Write([]byte("+PONG\r\n"))
 		}

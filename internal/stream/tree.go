@@ -123,6 +123,7 @@ func (t *Tree) Floor(k []byte) (key []byte, val any, ok bool) {
 }
 
 
+
 func (t *Tree) Last() ([]byte, any, bool) {
     n := t.root
     var key []byte
@@ -144,4 +145,45 @@ func (t *Tree) Last() ([]byte, any, bool) {
 
 func (t *Tree)Size()int{
 	return t.size
+}
+func (t *Tree)WalkRange(acc,start,end[]byte,fn func([]byte, any) bool) bool {
+	return t.root.WalkRange(acc,start,end,true,fn)
+}
+func (n *node) WalkRange(acc,start ,end[]byte, bounded bool, fn func([]byte, any) bool) bool {
+	acc = append(append([]byte(nil), acc...), n.prefix...)
+	if bounded {
+		m := min(len(n.prefix), len(start))
+		switch c := bytes.Compare(n.prefix[:m], start[:m]); {
+		case c < 0:
+			return true 
+		case c > 0:
+			bounded = false 
+		default:
+			if len(n.prefix) >= len(start) {
+				bounded = false
+			} else {
+				start = start[m:]
+			}
+		}
+	}
+	if n.hasValue && !bounded {
+		if bytes.Compare(acc, end) <= 0 {
+            if !fn(acc, n.value) {
+                return false 
+            }
+        } else {
+            return false 
+        }
+	}
+	for _, c := range n.children {
+		childAcc := append(append([]byte(nil), acc...), c.prefix...)
+        m := min(len(childAcc), len(end))
+        if bytes.Compare(childAcc[:m], end[:m]) > 0 {
+            return false 
+        }
+        if !c.WalkRange(acc, start, end, bounded, fn) {
+            return false 
+        }
+	}
+	return true
 }
