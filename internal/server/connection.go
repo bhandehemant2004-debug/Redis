@@ -120,8 +120,8 @@ func handleconnection(conn net.Conn, server *Server) {
 				response := protocol.ResponseXRange(result)
 				conn.Write([]byte(response))
 			case "XREAD":
-				result := command.HandleXreadCommand(commands,server.storage)
-				response := protocol.ResponseXRead(commands[2],result)
+				keys,collection := command.HandleXreadCommand(commands,server.storage)
+				response := protocol.ResponseXRead(keys,collection)
 				conn.Write([]byte(response))
 
 			default:

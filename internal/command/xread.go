@@ -6,36 +6,60 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/internal/stream"
 )
 
-func HandleXreadCommand(commands []string , storage store.Storage)[]*obj.Entry{
+func HandleXreadCommand(commands []string, storage store.Storage) ([]string, [][]*obj.Entry) {
 
-	key := commands[2]
-	start := commands[3]
-	end := "+"
+	// commands:
+	//
+	// XREAD STREAMS key1 key2 id1 id2
+	//
+	// Find number of streams.
+	n := (len(commands) - 2) / 2
 
-	if start == "-" {
-		start = "0-0"
-	}
+	keys := commands[2 : 2+n]
+	ids := commands[2+n:]
 
-	if end == "+" {
-		end = "18446744073709551615-18446744073709551615"
-	}
-	redisobj, exists := storage.Get(key)
+	allEntries := make([][]*obj.Entry, 0, len(keys))
 
-	if !exists{}
+	for i, key := range keys {
 
-	tree := redisobj.Value.(*stream.Tree)
+		start := ids[i]
 
-	result := make([]*obj.Entry,0)
-	tree.WalkRange(nil,[]byte(start),[]byte(end),func(b []byte, a any) bool {
-
-		entry , ok := a.(*obj.Entry)
-
-		if !ok {
-			return  false
+		if start == "-" {
+			start = "0-0"
 		}
-		result = append(result, entry)
-		return true;
-	})
-	return result
 
+		end := "18446744073709551615-18446744073709551615"
+
+		redisobj, exists := storage.Get(key)
+
+		if !exists {
+			allEntries = append(allEntries, []*obj.Entry{})
+			continue
+		}
+
+		tree := redisobj.Value.(*stream.Tree)
+
+		result := make([]*obj.Entry, 0)
+
+		tree.WalkRange(
+			nil,
+			[]byte(start),
+			[]byte(end),
+			func(b []byte, a any) bool {
+
+				entry, ok := a.(*obj.Entry)
+
+				if !ok {
+					return false
+				}
+
+				result = append(result, entry)
+				return true
+			},
+		)
+
+		allEntries = append(allEntries, result)
+	}
+
+	return keys, allEntries
 }
