@@ -148,3 +148,65 @@ func ResponseXRange(entries []*obj.Entry) []byte {
 
 	return result
 }
+func ResponseXRead(key string, entries []*obj.Entry) []byte {
+	result := make([]byte, 0)
+
+	// Outer array: one stream
+	result = append(result, '*', '1', '\r', '\n')
+
+	// [key, entries]
+	result = append(result, '*', '2', '\r', '\n')
+
+	// Stream key
+	result = append(result, '$')
+	result = strconv.AppendInt(result, int64(len(key)), 10)
+	result = append(result, '\r', '\n')
+	result = append(result, key...)
+	result = append(result, '\r', '\n')
+
+	// Array of entries
+	result = append(result, '*')
+	result = strconv.AppendInt(result, int64(len(entries)), 10)
+	result = append(result, '\r', '\n')
+
+	for _, entry := range entries {
+
+		// [id, [field, value, ...]]
+		result = append(result, '*', '2', '\r', '\n')
+
+		// ID
+		result = append(result, '$')
+		result = strconv.AppendInt(result, int64(len(entry.Id)), 10)
+		result = append(result, '\r', '\n')
+		result = append(result, entry.Id...)
+		result = append(result, '\r', '\n')
+
+		// Field/value array
+		result = append(result, '*')
+		result = strconv.AppendInt(
+			result,
+			int64(len(entry.Entries)*2),
+			10,
+		)
+		result = append(result, '\r', '\n')
+
+		for field, value := range entry.Entries {
+
+			// field
+			result = append(result, '$')
+			result = strconv.AppendInt(result, int64(len(field)), 10)
+			result = append(result, '\r', '\n')
+			result = append(result, field...)
+			result = append(result, '\r', '\n')
+
+			// value
+			result = append(result, '$')
+			result = strconv.AppendInt(result, int64(len(value)), 10)
+			result = append(result, '\r', '\n')
+			result = append(result, value...)
+			result = append(result, '\r', '\n')
+		}
+	}
+
+	return result
+}
