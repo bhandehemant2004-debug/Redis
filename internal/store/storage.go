@@ -2,7 +2,6 @@ package store
 
 import (
 	"time"
-
 	"github.com/codecrafters-io/redis-starter-go/internal/util"
 )
 
@@ -16,18 +15,23 @@ type Storage interface {
 	AddBlocking(key string,waiter *util.Waiter)()
 	GetBlocking(key string)([]*util.Waiter, bool)
 	Deleteblocking(key string)()
+	AddStreamBlocking(streamkey string, waiter *util.StreamWaiter)
+    GetStreamBlocking(streamkey string) ([]*util.StreamWaiter, bool)
+    RemoveStreamBlocking(streamkey string, waiter *util.StreamWaiter)
 }
 
 
 type MemoryStorage struct {
 	data map[string]util.Redisobj
 	blocked map[string][]*util.Waiter
+	streamBlocked map[string][]*util.StreamWaiter
 }
 
 func NewMemoryStorage() *MemoryStorage {
 	return &MemoryStorage{
 		data: make(map[string]util.Redisobj),
 		blocked: make(map[string][]*util.Waiter),
+		streamBlocked: make(map[string][]*util.StreamWaiter),
 	}
 }
 
@@ -95,3 +99,55 @@ func (s *MemoryStorage)Deleteblocking(key string){
 		delete(s.blocked,key)
 	}
 }
+
+func (s *MemoryStorage)AddStreamBlocking(streamkey  string, waiter *util.StreamWaiter){
+
+	streamobj,exists := s.streamBlocked[streamkey]
+
+	if !exists {
+		s.streamBlocked[streamkey]= make([]*util.StreamWaiter, 0)
+	}
+
+	streamobj = append(streamobj, waiter)
+	s.streamBlocked[streamkey]=streamobj
+
+}
+
+func (s *MemoryStorage) RemoveStreamBlocking(streamKey string,target *util.StreamWaiter,) {
+    waiters, exists := s.streamBlocked[streamKey]
+    if !exists {
+        return
+    }
+
+    for i, waiter := range waiters {
+        if waiter == target {
+            waiters = append(
+                waiters[:i],
+                waiters[i+1:]...,
+            )
+            break
+        }
+    }
+
+    if len(waiters) == 0 {
+        delete(s.streamBlocked, streamKey)
+    } else {
+        s.streamBlocked[streamKey] = waiters
+    }
+}
+
+func (s *MemoryStorage)GetStreamBlocking(streamkey string )([]*util.StreamWaiter,bool){
+	
+	 waiters, exists := s.streamBlocked[streamkey]
+
+    if !exists {
+        return nil, false
+    }
+
+    return waiters, true
+
+}
+
+
+
+

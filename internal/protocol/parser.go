@@ -112,11 +112,9 @@ func ResponseXRange(entries []*obj.Entry) []byte {
 
 	for _, entry := range entries {
 
-		// Each entry is:
-		// [ID, [field, value, field, value, ...]]
 		result = append(result, '*', '2', '\r', '\n')
 
-		// ID
+
 		result = append(result, '$')
 		result = strconv.AppendInt(result, int64(len(entry.Id)), 10)
 		result = append(result, '\r', '\n')

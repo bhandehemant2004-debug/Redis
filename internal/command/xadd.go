@@ -54,7 +54,16 @@ func HandleXaddCommand(commands []string , storage store.Storage)(string,bool){
 
 	storage.Set(key,object)
 
+	waiters, exists := storage.GetStreamBlocking(key)
 
+	if exists {
+		for _, waiter := range waiters {
+
+			if strings.Compare(entry_key, waiter.StartID) > 0 {
+				close(waiter.Ch)
+			}
+		}
+	}
 
 	return entry_key,false
 }
