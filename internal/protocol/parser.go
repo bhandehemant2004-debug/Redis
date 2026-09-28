@@ -148,7 +148,9 @@ func ResponseXRange(entries []*obj.Entry) []byte {
 }
 func ResponseXRead(keys []string, entries [][]*obj.Entry) []byte {
 	result := make([]byte, 0)
-
+	if keys == nil && entries == nil {
+        return []byte("*-1\r\n")
+    }
 	// Outer array = number of streams
 	result = append(result, '*')
 	result = strconv.AppendInt(result, int64(len(keys)), 10)
