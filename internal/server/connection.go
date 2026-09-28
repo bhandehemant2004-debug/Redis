@@ -42,10 +42,7 @@ func handleconnection(conn net.Conn, server *Server) {
 
 		comm := strings.ToUpper(commands[0])
 
-		if comm != "EXEC" && is_multi_command_active{
-			Queue.Push(commands)
-		}
-
+		
 		switch comm {
 			case "EXEC":
 				if !is_multi_command_active {
