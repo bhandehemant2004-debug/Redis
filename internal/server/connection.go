@@ -74,10 +74,12 @@ func handleconnection(conn net.Conn, server *Server) {
 			case "DISCARD":
 				if !is_multi_command_active{
 					conn.Write([]byte("ERR DISCARD without MULTI\r\n"))
+					continue
 				}
 				for !Queue.IsEmpty() {
 					 Queue.Pop()
 				}
+				is_multi_command_active = false
 				conn.Write([]byte("+OK\r\n"))
 
 			default:
@@ -118,7 +120,7 @@ func handleconnection(conn net.Conn, server *Server) {
 		
 				switch result.Type{
 					case "string":
-					return([]byte(protocol.Response_bulk_string(result.Value.(string))))
+						return([]byte(protocol.Response_bulk_string(result.Value.(string))))
 					}
 				return []byte("$-1\r\n")
 			case "RPUSH":
@@ -184,7 +186,7 @@ func handleconnection(conn net.Conn, server *Server) {
 				response := command.HandleIncrCommand(commands,server.storage)
 				return([]byte(response+"\r\n"))
 			default:
-				return([]byte("+PONG\r\n"))
+				return []byte("-ERR unknown command\r\n")
 		}
-		return([]byte("+PONG\r\n"))
+		return []byte("-ERR unknown command\r\n")
 	}
