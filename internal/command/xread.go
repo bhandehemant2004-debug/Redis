@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -127,6 +128,7 @@ func HandleXreadCommand(commands []string, storage store.Storage) ([]string, [][
 				tree.WalkRange(nil,[]byte(startID),[]byte(end),
 					func(b []byte, a any) bool {
 						if string(b) == waiter.StartID {
+							fmt.Println("reached to the id:"+waiter.StartID)
 							return true
 						}
 						entry, ok := a.(*obj.Entry)
