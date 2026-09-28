@@ -72,6 +72,15 @@ func handleconnection(conn net.Conn, server *Server) {
 				}
 				is_multi_command_active = true
 				conn.Write([]byte("+OK\r\n"))
+			case "DISCARD":
+				if !is_multi_command_active{
+					conn.Write([]byte("ERR DISCARD without MULTI\r\n"))
+				}
+				for !Queue.IsEmpty() {
+					 Queue.Pop()
+				}
+				conn.Write([]byte("+OK\r\n"))
+
 			default:
 				if is_multi_command_active {
 					Queue.Push(commands)
