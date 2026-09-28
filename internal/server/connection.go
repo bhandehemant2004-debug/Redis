@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"net"
 	"strings"
 
@@ -88,7 +87,6 @@ func handleconnection(conn net.Conn, server *Server) {
 					continue
 				}
 				response := Execute(commands, server)
-				fmt.Print(len(response))
 				conn.Write(response)
 		}
 			
@@ -122,7 +120,7 @@ func handleconnection(conn net.Conn, server *Server) {
 					case "string":
 					return([]byte(protocol.Response_bulk_string(result.Value.(string))))
 					}
-			
+				return []byte("$-1\r\n")
 			case "RPUSH":
 				result := command.HandleRpushCommand(commands,server.storage)
 				respond := protocol.AppendInteger(result)
