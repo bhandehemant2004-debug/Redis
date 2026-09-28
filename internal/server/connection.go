@@ -66,7 +66,7 @@ func handleconnection(conn net.Conn, server *Server) {
 				is_multi_command_active = true
 				conn.Write([]byte("+OK\r\n"))
 			default:
-				conn.Write([]byte("+PONG\r\n"))
+				Execute(commands,conn,server)
 		}
 			
 
