@@ -19,11 +19,22 @@ func handleconnection(conn net.Conn, server *Server) {
 	
 	Queue := util.NewQueue()
 
+	
+
 	is_multi_command_active := false
 
-
-
 	for {
+		
+
+		if !is_multi_command_active && ! Queue.IsEmpty(){
+
+			for !Queue.IsEmpty(){
+				commands,_ :=Queue.Pop()
+				Execute(commands,conn,server)
+			}
+
+		}
+
 		n, err := conn.Read(readBuffer)
 		if err != nil {
 			return
@@ -45,6 +56,26 @@ func handleconnection(conn net.Conn, server *Server) {
 			Queue.Push(commands)
 		}
 
+		switch comm {
+			case "EXEC":
+				if !is_multi_command_active{
+					conn.Write([]byte("-ERR EXEC without MULTI\r\n"))
+				} 
+				is_multi_command_active = false
+			case "MULTI":
+				is_multi_command_active = true
+				conn.Write([]byte("+OK\r\n"))
+			default:
+				conn.Write([]byte("+PONG\r\n"))
+		}
+			
+
+		}
+		
+	}
+
+	func Execute(commands []string,conn net.Conn, server *Server){
+		comm := strings.ToUpper(commands[0])
 		switch comm {
 			case "PING":
 				conn.Write([]byte("+PONG\r\n"))
@@ -91,11 +122,9 @@ func handleconnection(conn net.Conn, server *Server) {
 				if len(commands)==2{
 					if len(result)==0{
 						conn.Write([]byte("$-1\r\n"))
-						continue
 					}
 					response := protocol.Response_bulk_string(result[0])
 					conn.Write([]byte(response));
-					continue
 					
 				}
 				response := protocol.ResponseArray(result)
@@ -104,7 +133,6 @@ func handleconnection(conn net.Conn, server *Server) {
 				result := command.HandleBlpopCommand(commands,server.storage)
 				if len(result)==0 {
 					conn.Write([]byte("*-1\r\n"))
-					continue
 				}
 				response := protocol.ResponseArray(result)
 				conn.Write([]byte(response))
@@ -118,7 +146,6 @@ func handleconnection(conn net.Conn, server *Server) {
 					response := protocol.SimpleError(result);
 					fmt.Println(response)
 					conn.Write([]byte(response))
-					continue
 				}
 				
 				response := protocol.Response_bulk_string(result)
@@ -136,14 +163,7 @@ func handleconnection(conn net.Conn, server *Server) {
 			case "INCR":
 				response := command.HandleIncrCommand(commands,server.storage)
 				conn.Write([]byte(response+"\r\n"))
-			case "MULTI":
-				is_multi_command_active = true
-				conn.Write([]byte("+OK\r\n"))
 			default:
 				conn.Write([]byte("+PONG\r\n"))
 		}
-			
-
-		}
-		
 	}

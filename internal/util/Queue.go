@@ -20,3 +20,7 @@ func (q *Queue) Pop() ([]string, bool) {
 
     return value, true
 }
+
+func (q Queue) IsEmpty() bool {
+	return len(q) == 0
+}
