@@ -60,6 +60,7 @@ func HandleXaddCommand(commands []string , storage store.Storage)(string,bool){
 		for _, waiter := range waiters {
 
 			if strings.Compare(entry_key, waiter.StartID) > 0 {
+				fmt.Println("pushing for the id :"+waiter.StartID)
 				close(waiter.Ch)
 			}
 		}
