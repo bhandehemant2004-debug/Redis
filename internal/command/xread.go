@@ -70,9 +70,10 @@ func HandleXreadCommand(commands []string, storage store.Storage) ([]string, [][
 
 	}else {
 
-		
+
 		timeout, err := strconv.ParseInt(commands[2], 10, 64)
 		if err != nil {
+
 			return nil, nil
 		}
 		key := commands[4]
@@ -113,8 +114,44 @@ func HandleXreadCommand(commands []string, storage store.Storage) ([]string, [][
 			}
 			fmt.Print(0)
 			waiter := util.NewStreamWaiter(startID)
-
 			storage.AddStreamBlocking(key, waiter)
+			if timeout==0{
+				select {
+
+						case <-waiter.Ch:
+							redisobj, exists := storage.Get(key)
+
+							if !exists {
+								storage.RemoveStreamBlocking(key, waiter)
+								return nil, nil
+							}
+							tree := redisobj.Value.(*stream.Tree)
+
+							result := make([]*obj.Entry, 0)
+
+							tree.WalkRange(nil,[]byte(startID),[]byte(end),
+								func(b []byte, a any) bool {
+									if string(b) == waiter.StartID {
+										fmt.Println("reached to the id:"+waiter.StartID)
+										return true
+									}
+									entry, ok := a.(*obj.Entry)
+
+									if !ok {
+										return false
+									}
+
+									result = append(result, entry)
+									return true
+							},)
+
+							storage.RemoveStreamBlocking(key, waiter)
+
+							return []string{key}, [][]*obj.Entry{result}
+					
+						}
+
+					}
 			timer := time.NewTimer(time.Duration(timeout) * time.Millisecond,)
 			defer timer.Stop()
 			select {
