@@ -82,14 +82,19 @@ func HandleXreadCommand(commands []string, storage store.Storage) ([]string, [][
 		if startID == "-" {
 			startID = "0-0"
 		}
-
+		
 		end := "18446744073709551615-18446744073709551615"
 
 		redisobj, exists := storage.Get(key)
 
 		if exists {
+			
 			tree := redisobj.Value.(*stream.Tree)
-
+			if startID == "$"{
+				if k,_,ok := tree.Last();ok{
+					startID=string(k)
+				}
+			}
 			result := make([]*obj.Entry, 0)
 
 			tree.WalkRange(nil,[]byte(startID),[]byte(end),
