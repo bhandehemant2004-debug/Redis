@@ -16,7 +16,7 @@ func HandleIncrCommand(commands []string, storage store.Storage) string {
 	if !exists {
 		obj := util.NewRedisobj("string", "1")
 		storage.Set(key, obj)
-		return "1"
+		return ":1"
 	}
 
 	if obj.Type != "string" {
@@ -27,7 +27,7 @@ func HandleIncrCommand(commands []string, storage store.Storage) string {
 
 	newValue, err := strconv.Atoi(value)
 	if err != nil {
-		return ""
+		return "-ERR value is not an integer or out of range"
 	}
 
 	newValue++
@@ -36,5 +36,5 @@ func HandleIncrCommand(commands []string, storage store.Storage) string {
 
 	storage.Set(key, obj)
 
-	return strconv.Itoa(newValue)
+	return ":"+strconv.Itoa(newValue)
 }
