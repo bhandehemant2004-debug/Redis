@@ -93,7 +93,7 @@ func HandleXreadCommand(commands []string, storage store.Storage) ([]string, [][
 
 			tree.WalkRange(nil,[]byte(startID),[]byte(end),
 				func(b []byte, a any) bool {
-
+					
 					entry, ok := a.(*obj.Entry)
 
 					if !ok {
@@ -105,6 +105,7 @@ func HandleXreadCommand(commands []string, storage store.Storage) ([]string, [][
 				},
 			)
 			if len(result) > 0 {
+				fmt.Println(len(result))
 				return []string{key}, [][]*obj.Entry{result}
 			}
 			waiter := util.NewStreamWaiter(startID)

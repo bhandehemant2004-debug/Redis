@@ -48,7 +48,7 @@ func HandleXaddCommand(commands []string, storage store.Storage) (string, bool) 
 	tree.Insert([]byte(entry_key), Entry)
 
 	storage.Set(key, object)
-	fmt.Println("pushing for the id :")
+	
 
 	waiters, exists := storage.GetStreamBlocking(key)
 
