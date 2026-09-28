@@ -124,6 +124,9 @@ func handleconnection(conn net.Conn, server *Server) {
 				response := protocol.ResponseXRead(keys,collection)
 				conn.Write([]byte(response))
 
+			case "INCR":
+				response := command.HandleIncrCommand(commands,server.storage)
+				conn.Write([]byte(response+"\r\n"))
 			default:
 				conn.Write([]byte("+PONG\r\n"))
 		}
