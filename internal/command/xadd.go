@@ -12,61 +12,56 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/internal/util"
 )
 
-
-func HandleXaddCommand(commands []string , storage store.Storage)(string,bool){
-	
+func HandleXaddCommand(commands []string, storage store.Storage) (string, bool) {
 
 	key := commands[1]
 
+	object, exists := storage.Get(key)
 
-	object , exists := storage.Get(key)
-
-	if !exists{
-		object = util.NewRedisobj("stream",stream.New())
+	if !exists {
+		object = util.NewRedisobj("stream", stream.New())
 	}
 
 	tree := object.Value.(*stream.Tree)
 
 	entry_key := commands[2]
 
-	last_entry_key,_,ok :=tree.Last() 
+	last_entry_key, _, ok := tree.Last()
 
-	
-	if entry_key == "*"{
-		return fmt.Sprintf("%d-%d", time.Now().UnixMilli(), 0),false
-	}else if entry_key == "0-0" {
-    	return "ERR The ID specified in XADD must be greater than 0-0", true
+	if entry_key == "*" {
+		return fmt.Sprintf("%d-%d", time.Now().UnixMilli(), 0), false
+	} else if entry_key == "0-0" {
+		return "ERR The ID specified in XADD must be greater than 0-0", true
 	} else if strings.HasSuffix(entry_key, "*") {
-    	if ok {
-        	entry_key, _ = validateID(entry_key, string(last_entry_key))
-    	} else {
-        	entry_key = generateFirstID(entry_key)
-    }
-	}else if(ok && strings.Compare(entry_key,string(last_entry_key))<=0){
-		return "ERR The ID specified in XADD is equal or smaller than the target stream top item",true
+		if ok {
+			entry_key, _ = validateID(entry_key, string(last_entry_key))
+		} else {
+			entry_key = generateFirstID(entry_key)
+		}
+	} else if ok && strings.Compare(entry_key, string(last_entry_key)) <= 0 {
+		return "ERR The ID specified in XADD is equal or smaller than the target stream top item", true
 	}
 	Entry := obj.NewEntry([]byte(entry_key))
 
 	Entry.AddEntry(commands[3:])
 
-	tree.Insert([]byte(entry_key),Entry);
+	tree.Insert([]byte(entry_key), Entry)
 
-
-	storage.Set(key,object)
+	storage.Set(key, object)
 
 	waiters, exists := storage.GetStreamBlocking(key)
 
 	if exists {
 		for _, waiter := range waiters {
-
+			fmt.Println("pushing for the id :" + waiter.StartID)
 			if strings.Compare(entry_key, waiter.StartID) > 0 {
-				fmt.Println("pushing for the id :"+waiter.StartID)
+				
 				close(waiter.Ch)
 			}
 		}
 	}
 
-	return entry_key,false
+	return entry_key, false
 }
 
 func validateID(id, lastID string) (string, bool) {
@@ -98,11 +93,10 @@ func validateID(id, lastID string) (string, bool) {
 
 	return id, true
 }
-func generateFirstID(key string)string{
-	val := strings.Split(key, "-");
-	if val[0]=="0"{
-		return val[0]+"-1"
+func generateFirstID(key string) string {
+	val := strings.Split(key, "-")
+	if val[0] == "0" {
+		return val[0] + "-1"
 	}
-	return val[0]+"-0"
+	return val[0] + "-0"
 }
-
