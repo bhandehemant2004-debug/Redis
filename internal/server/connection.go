@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"net"
 	"strings"
 
@@ -67,7 +66,7 @@ func handleconnection(conn net.Conn, server *Server) {
 				response := protocol.ResponseTransaction(responses)
 
 				conn.Write([]byte(response))
-				
+
 			case "MULTI":
 				if is_multi_command_active {
 					conn.Write([]byte("-ERR MULTI calls can not be nested\r\n"))
