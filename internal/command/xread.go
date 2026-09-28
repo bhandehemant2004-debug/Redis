@@ -111,6 +111,7 @@ func HandleXreadCommand(commands []string, storage store.Storage) ([]string, [][
 				fmt.Println(len(result))
 				return []string{key}, [][]*obj.Entry{result}
 			}
+			fmt.Print(0)
 			waiter := util.NewStreamWaiter(startID)
 
 			storage.AddStreamBlocking(key, waiter)
