@@ -18,6 +18,7 @@ func handleconnection(conn net.Conn, server *Server) {
 	
 	Queue := util.NewQueue()
 
+	watchedKeys:= make(map[string]uint64)
 	
 
 	is_multi_command_active := false
@@ -52,7 +53,10 @@ func handleconnection(conn net.Conn, server *Server) {
 
 				for !Queue.IsEmpty() {
 					queuedCommands, _ := Queue.Pop()
-
+					if _,exists := watchedKeys[queuedCommands[2]];exists{
+						responses = make([][]byte, 0)
+						break
+					}
 					response := Execute(queuedCommands, server)
 
 					responses = append(responses, response)
@@ -86,6 +90,7 @@ func handleconnection(conn net.Conn, server *Server) {
 					conn.Write([]byte("-ERR WATCH inside MULTI is not allowed\r\n"))
 					continue
 				}
+				watchedKeys[commands[1]]=1
 				result := command.HandleWatchCommand(commands,server.storage)
 				conn.Write([]byte(result))
 			default:
