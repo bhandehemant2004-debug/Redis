@@ -53,10 +53,6 @@ func handleconnection(conn net.Conn, server *Server) {
     			}
 				 responses := make([][]byte, 0)
 
-				if Queue.IsEmpty() {
-					conn.Write([]byte("*0\r\n"))
-					continue
-				}
 				for !Queue.IsEmpty() {
 					queuedCommands, _ := Queue.Pop()
 

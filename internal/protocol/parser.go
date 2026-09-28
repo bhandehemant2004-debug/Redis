@@ -218,6 +218,18 @@ func ResponseXRead(keys []string, entries [][]*obj.Entry) []byte {
 	return result
 }
 
-func ResponseTransaction(responses [][]byte)string{
-	return ""
+func ResponseTransaction(responses [][]byte) []byte {
+	result := make([]byte, 0)
+
+	// Outer RESP array
+	result = append(result, '*')
+	result = strconv.AppendInt(result, int64(len(responses)), 10)
+	result = append(result, '\r', '\n')
+
+	// Each response is already a complete RESP value
+	for _, response := range responses {
+		result = append(result, response...)
+	}
+
+	return result
 }
