@@ -54,12 +54,16 @@ func handleconnection(conn net.Conn, server *Server) {
 				for !Queue.IsEmpty() {
 					queuedCommands, _ := Queue.Pop()
 					if _,exists := watchedKeys[queuedCommands[2]];exists{
-						responses = make([][]byte, 0)
+						responses =nil
+						conn.Write([]byte("*-1\r\n"))
 						break
 					}
 					response := Execute(queuedCommands, server)
 
 					responses = append(responses, response)
+				}
+				if responses == nil{
+					continue
 				}
 
 				is_multi_command_active = false
