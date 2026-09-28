@@ -185,6 +185,9 @@ func handleconnection(conn net.Conn, server *Server) {
 			case "INCR":
 				response := command.HandleIncrCommand(commands,server.storage)
 				return([]byte(response+"\r\n"))
+			case "WATCH":
+				result := command.HandleWatchCommand(commands,server.storage)
+				return ([]byte(result))
 			default:
 				return []byte("-ERR unknown command\r\n")
 		}
