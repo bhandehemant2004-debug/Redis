@@ -81,7 +81,12 @@ func handleconnection(conn net.Conn, server *Server) {
 				}
 				is_multi_command_active = false
 				conn.Write([]byte("+OK\r\n"))
-
+			case "WATCH":
+				if is_multi_command_active{
+					conn.Write([]byte("-ERR WATCH inside MULTI is not allowed\r\n"))
+				}
+				result := command.HandleWatchCommand(commands,server.storage)
+				conn.Write([]byte(result))
 			default:
 				if is_multi_command_active {
 					Queue.Push(commands)
@@ -117,7 +122,6 @@ func handleconnection(conn net.Conn, server *Server) {
 				if !ok {
 					return([]byte("$-1\r\n"))
 				}
-		
 				switch result.Type{
 					case "string":
 						return([]byte(protocol.Response_bulk_string(result.Value.(string))))
@@ -185,9 +189,7 @@ func handleconnection(conn net.Conn, server *Server) {
 			case "INCR":
 				response := command.HandleIncrCommand(commands,server.storage)
 				return([]byte(response+"\r\n"))
-			case "WATCH":
-				result := command.HandleWatchCommand(commands,server.storage)
-				return ([]byte(result))
+			
 			default:
 				return []byte("-ERR unknown command\r\n")
 		}
