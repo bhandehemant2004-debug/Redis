@@ -7,6 +7,7 @@ import (
 
 	"github.com/codecrafters-io/redis-starter-go/internal/command"
 	"github.com/codecrafters-io/redis-starter-go/internal/protocol"
+	"github.com/codecrafters-io/redis-starter-go/internal/util"
 )
 
 
@@ -16,6 +17,11 @@ func handleconnection(conn net.Conn, server *Server) {
 	readBuffer := make([]byte, 1024)
 	pending := make([]byte, 0)
 	
+	Queue := util.NewQueue()
+
+	is_multi_command_active := false
+
+
 
 	for {
 		n, err := conn.Read(readBuffer)
@@ -35,6 +41,9 @@ func handleconnection(conn net.Conn, server *Server) {
 
 		comm := strings.ToUpper(commands[0])
 
+		if comm != "EXEC" && is_multi_command_active{
+			Queue.Push(commands)
+		}
 
 		switch comm {
 			case "PING":
@@ -127,6 +136,9 @@ func handleconnection(conn net.Conn, server *Server) {
 			case "INCR":
 				response := command.HandleIncrCommand(commands,server.storage)
 				conn.Write([]byte(response+"\r\n"))
+			case "MULTI":
+				is_multi_command_active = true
+				conn.Write([]byte("+OK\r\n"))
 			default:
 				conn.Write([]byte("+PONG\r\n"))
 		}
