@@ -86,7 +86,7 @@ func handleconnection(conn net.Conn, server *Server) {
 					conn.Write([]byte("-ERR WATCH inside MULTI is not allowed\r\n"))
 				}
 				//result := command.HandleWatchCommand(commands,server.storage)
-				conn.Write([]byte("ok"))
+				//conn.Write([]byte("ok"))
 			default:
 				if is_multi_command_active {
 					Queue.Push(commands)
