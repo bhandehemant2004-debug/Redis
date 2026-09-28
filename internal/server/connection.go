@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net"
 	"strings"
 
@@ -81,6 +82,7 @@ func handleconnection(conn net.Conn, server *Server) {
 					continue
 				}
 				response := Execute(commands, server)
+				fmt.Print(len(response))
 				conn.Write(response)
 		}
 			
