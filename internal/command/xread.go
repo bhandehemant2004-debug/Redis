@@ -18,7 +18,7 @@ func HandleXreadCommand(commands []string, storage store.Storage) ([]string, [][
 	command := strings.ToUpper(commands[1])
 	
 	
-	if command == "STREAM"{
+	if command == "STREAMS"{
 		n := (len(commands) - 2) / 2
 
 		keys := commands[2 : 2+n]
