@@ -73,7 +73,7 @@ func handleconnection(conn net.Conn, server *Server) {
 				conn.Write([]byte("+OK\r\n"))
 			case "DISCARD":
 				if !is_multi_command_active{
-					conn.Write([]byte("ERR DISCARD without MULTI\r\n"))
+					conn.Write([]byte("-ERR DISCARD without MULTI\r\n"))
 					continue
 				}
 				for !Queue.IsEmpty() {
