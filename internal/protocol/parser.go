@@ -217,3 +217,7 @@ func ResponseXRead(keys []string, entries [][]*obj.Entry) []byte {
 
 	return result
 }
+
+func ResponseTransaction(responses [][]byte)string{
+	return ""
+}

@@ -24,16 +24,6 @@ func handleconnection(conn net.Conn, server *Server) {
 	is_multi_command_active := false
 
 	for {
-		
-
-		if !is_multi_command_active && ! Queue.IsEmpty(){
-
-			for !Queue.IsEmpty(){
-				commands,_ :=Queue.Pop()
-				Execute(commands,conn,server)
-			}
-
-		}
 
 		n, err := conn.Read(readBuffer)
 		if err != nil {
@@ -58,15 +48,41 @@ func handleconnection(conn net.Conn, server *Server) {
 
 		switch comm {
 			case "EXEC":
-				if !is_multi_command_active{
+				if !is_multi_command_active {
 					conn.Write([]byte("-ERR EXEC without MULTI\r\n"))
-				} 
+					continue
+    			}
+				 responses := make([][]byte, 0)
+
+				for !Queue.IsEmpty() {
+					queuedCommands, _ := Queue.Pop()
+
+					response := Execute(queuedCommands, server)
+
+					responses = append(responses, response)
+				}
+
 				is_multi_command_active = false
+
+				response := protocol.ResponseTransaction(responses)
+
+				conn.Write([]byte(response))
+				
 			case "MULTI":
+				if is_multi_command_active {
+					conn.Write([]byte("-ERR MULTI calls can not be nested\r\n"))
+					continue
+				}
 				is_multi_command_active = true
 				conn.Write([]byte("+OK\r\n"))
 			default:
-				Execute(commands,conn,server)
+				if is_multi_command_active {
+					Queue.Push(commands)
+					conn.Write([]byte("+QUEUED\r\n"))
+					continue
+				}
+				response := Execute(commands, server)
+				conn.Write(response)
 		}
 			
 
@@ -74,96 +90,96 @@ func handleconnection(conn net.Conn, server *Server) {
 		
 	}
 
-	func Execute(commands []string,conn net.Conn, server *Server){
+	func Execute(commands []string, server *Server)[]byte{
 		comm := strings.ToUpper(commands[0])
 		switch comm {
 			case "PING":
-				conn.Write([]byte("+PONG\r\n"))
+				return([]byte("+PONG\r\n"))
 			case "ECHO":
 				result := command.HandleechoCommand(commands)
 				response := protocol.Response_bulk_string(result)
-				conn.Write([]byte(response))
+				return([]byte(response))
 			case "SET":
 				result,ok := command.HandleSetCommand(commands,server.storage)
 				if ok {
-					conn.Write([]byte(result))
+					return([]byte(result))
 				}
 				
 			case "GET":
 				result,ok := command.HandgetCommand(commands,server.storage)
 				if !ok {
-					conn.Write([]byte("$-1\r\n"))
+					return([]byte("$-1\r\n"))
 				}
 		
 				switch result.Type{
 					case "string":
-					conn.Write([]byte(protocol.Response_bulk_string(result.Value.(string))))
+					return([]byte(protocol.Response_bulk_string(result.Value.(string))))
 					}
 			
 			case "RPUSH":
 				result := command.HandleRpushCommand(commands,server.storage)
 				respond := protocol.AppendInteger(result)
-				conn.Write([]byte(respond))		
+				return([]byte(respond))		
 				
 			case "LRANGE":
 				result := command.HandleLrangeCommand(commands,server.storage)
 				respond := protocol.ResponseArray(result)
-				conn.Write([]byte(respond))
+				return([]byte(respond))
 			case "LPUSH":
 				result := command.HandleLpushCommand(commands,server.storage)
 				respond := protocol.AppendInteger(result)
-				conn.Write([]byte(respond))
+				return([]byte(respond))
 			case "LLEN":
 				result := command.HandleLlenCommand(commands,server.storage)
 				respond := protocol.AppendInteger(result)
-				conn.Write([]byte(respond))
+				return([]byte(respond))
 			case "LPOP":
 				result := command.HandleLpopCommand(commands,server.storage)
 				if len(commands)==2{
 					if len(result)==0{
-						conn.Write([]byte("$-1\r\n"))
+						return([]byte("$-1\r\n"))
 					}
 					response := protocol.Response_bulk_string(result[0])
-					conn.Write([]byte(response));
+					return([]byte(response));
 					
 				}
 				response := protocol.ResponseArray(result)
-				conn.Write([]byte(response))
+				return([]byte(response))
 			case "BLPOP":
 				result := command.HandleBlpopCommand(commands,server.storage)
 				if len(result)==0 {
-					conn.Write([]byte("*-1\r\n"))
+					return([]byte("*-1\r\n"))
 				}
 				response := protocol.ResponseArray(result)
-				conn.Write([]byte(response))
+				return([]byte(response))
 			case "TYPE":
 				response := command.HandleTypeCommand(commands,server.storage)
-				conn.Write([]byte(response))
+				return([]byte(response))
 
 			case "XADD":
 				result,error := command.HandleXaddCommand(commands,server.storage)
 				if error {
 					response := protocol.SimpleError(result);
-					fmt.Println(response)
-					conn.Write([]byte(response))
+					return([]byte(response))
 				}
 				
 				response := protocol.Response_bulk_string(result)
-				conn.Write([]byte(response))
+				return([]byte(response))
 			
 			case "XRANGE":
 				result := command.HandleXrangeCommand(commands,server.storage)
 				response := protocol.ResponseXRange(result)
-				conn.Write([]byte(response))
+				return([]byte(response))
 			case "XREAD":
 				keys,collection := command.HandleXreadCommand(commands,server.storage)
 				response := protocol.ResponseXRead(keys,collection)
-				conn.Write([]byte(response))
+				return([]byte(response))
 
 			case "INCR":
 				response := command.HandleIncrCommand(commands,server.storage)
-				conn.Write([]byte(response+"\r\n"))
+				return([]byte(response+"\r\n"))
 			default:
-				conn.Write([]byte("+PONG\r\n"))
+				return([]byte("+PONG\r\n"))
 		}
+		return([]byte("+PONG\r\n"))
 	}
