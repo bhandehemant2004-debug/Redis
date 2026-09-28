@@ -48,12 +48,13 @@ func HandleXaddCommand(commands []string, storage store.Storage) (string, bool) 
 	tree.Insert([]byte(entry_key), Entry)
 
 	storage.Set(key, object)
+	fmt.Println("pushing for the id :")
 
 	waiters, exists := storage.GetStreamBlocking(key)
 
 	if exists {
 		for _, waiter := range waiters {
-			fmt.Println("pushing for the id :" + waiter.StartID)
+			
 			if strings.Compare(entry_key, waiter.StartID) > 0 {
 				
 				close(waiter.Ch)
