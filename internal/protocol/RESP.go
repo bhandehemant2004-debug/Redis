@@ -2,6 +2,6 @@
 
 package protocol
 
-type RESP struct{
+func readRESPResponse(){
 	
 }

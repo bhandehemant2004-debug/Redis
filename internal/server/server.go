@@ -1,10 +1,10 @@
 package server
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 	"os"
-	"strings"
 
 	"github.com/codecrafters-io/redis-starter-go/internal/client"
 	"github.com/codecrafters-io/redis-starter-go/internal/protocol"
@@ -54,50 +54,150 @@ func NewServer(address string, role string , masterHost string , masterPort stri
     }
 }
 
-func StartReplication(server* Server){
-	address := net.JoinHostPort(server.masterHost,server.masterPort,)
+func StartReplication(server *Server) {
+    address := net.JoinHostPort(server.masterHost,server.masterPort,)
 
     conn, err := net.Dial("tcp", address)
     if err != nil {
-        return 
+        fmt.Println("Failed to connect to master:", err)
+        return
+    }
+    defer conn.Close()
+
+    reader := bufio.NewReader(conn)
+
+    err = PerformHandShake(conn, reader, server)
+    if err != nil {
+        fmt.Println("Replication handshake failed:", err)
+        return
+    }
+
+    for {
+        response, err := readRESPResponse(reader)
+        if err != nil {
+            fmt.Println("Master connection closed:", err)
+            return
+        }
+
+        fmt.Println("Received from master:", string(response))
+
+        // Later:
+        // processReplicationData(response, server)
+    }
+}
+
+func PerformHandShake(conn net.Conn,reader *bufio.Reader,server *Server,) error {
+
+    _, err := conn.Write(
+        []byte(protocol.ResponseArray([]string{"PING"})),
+    )
+    if err != nil {
+        return err
+    }
+
+    response, err := readRESPResponse(reader)
+    if err != nil {
+        return err
+    }
+
+    if string(response) != "+PONG\r\n" {
+        return fmt.Errorf(
+            "expected PONG, got %q",
+            string(response),
+        )
+    }
+
+    fmt.Println("Master replied PONG")
+
+
+    _, err = conn.Write(
+        []byte(protocol.ResponseArray([]string{
+            "REPLCONF",
+            "listening-port",
+            server.port_addr[1:],
+        })),
+    )
+    if err != nil {
+        return err
+    }
+
+    response, err = readRESPResponse(reader)
+    if err != nil {
+        return err
+    }
+
+    if string(response) != "+OK\r\n" {
+        return fmt.Errorf(
+            "expected OK after listening-port, got %q",
+            string(response),
+        )
     }
 
 
-    conn.Write([]byte(protocol.ResponseArray([]string{"PING"})))
+    _, err = conn.Write(
+        []byte(protocol.ResponseArray([]string{
+            "REPLCONF",
+            "capa",
+            "psync2",
+        })),
+    )
+    if err != nil {
+        return err
+    }
 
-	readBuffer := make([]byte, 1024)
+    response, err = readRESPResponse(reader)
+    if err != nil {
+        return err
+    }
 
-	pending := make([]byte, 0)
+    if string(response) != "+OK\r\n" {
+        return fmt.Errorf(
+            "expected OK after capa, got %q",
+            string(response),
+        )
+    }
 
-	
 
-	for {
+    _, err = conn.Write(
+        []byte(protocol.ResponseArray([]string{
+            "PSYNC",
+            "?",
+            "-1",
+        })),
+    )
+    if err != nil {
+        return err
+    }
 
-		n, err := conn.Read(readBuffer)
-		if err != nil {
-			return 
-		}
-		commands, remaining, ok := protocol.Parser(pending)
-		
-		pending = append(pending, readBuffer[:n]...)
-		if !ok {
-			continue
-		}
+    response, err = readRESPResponse(reader)
+    if err != nil {
+        return err
+    }
 
-		pending = remaining
+    fmt.Println("PSYNC response:", string(response))
 
-		comm := strings.ToUpper(commands[0])
+    return nil
+}
 
-		switch comm {
-		case "PONG":
-			conn.Write([]byte(protocol.ResponseArray([]string{"REPLCONF","listening-port",server.port_addr[1:]})))
-			conn.Write([]byte(protocol.ResponseArray([]string{"REPLCONF","capa","psync2"})))
+func readRESPResponse(reader *bufio.Reader) ([]byte, error) {
+    firstByte, err := reader.ReadByte()
+    if err != nil {
+        return nil, err
+    }
 
-		case "+FULLRESYNC":
-			conn.Write([]byte(protocol.ResponseArray([]string{"PSYNC","?","-1"})))
-		}
-		
-		
-	}
- 
+    switch firstByte {
+    case '+', '-':
+        line, err := reader.ReadBytes('\n')
+        if err != nil {
+            return nil, err
+        }
+
+        return append([]byte{firstByte}, line...), nil
+
+    default:
+        return nil, fmt.Errorf(
+            "unsupported RESP response type: %q",
+            firstByte,
+        )
+    }
 }
