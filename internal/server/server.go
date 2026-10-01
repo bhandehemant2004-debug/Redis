@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/codecrafters-io/redis-starter-go/internal/client"
+	"github.com/codecrafters-io/redis-starter-go/internal/protocol"
 	"github.com/codecrafters-io/redis-starter-go/internal/store"
 )
 
@@ -23,6 +24,9 @@ func (s* Server)Start(){
 	if err != nil {
 	 	fmt.Println("Failed to bind to port "+s.port_addr)
 	 	os.Exit(1)
+	}
+	if s.role =="slave"{
+
 	}
 	
 	for{
@@ -48,4 +52,19 @@ func NewServer(address string, role string , masterHost string , masterPort stri
 		masterReplID: "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb",
         masterReplOffset: 0,
     }
+}
+
+func StartReplication(server* Server)error{
+	address := net.JoinHostPort(server.masterHost,server.masterPort,)
+
+    conn, err := net.Dial("tcp", address)
+    if err != nil {
+        return err
+    }
+
+
+    conn.Write([]byte(protocol.ResponseArray([]string{"PING"})))
+
+    fmt.Println("Connected to master:", address)
+
 }
