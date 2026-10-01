@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/codecrafters-io/redis-starter-go/internal/client"
 	"github.com/codecrafters-io/redis-starter-go/internal/protocol"
@@ -49,7 +51,7 @@ func NewServer(address string, role string , masterHost string , masterPort stri
 	   role: role,
 	    masterHost: masterHost,
         masterPort: masterPort,
-		masterReplID: "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb",
+		masterReplID: "?",
         masterReplOffset: 0,
     }
 }
@@ -135,36 +137,24 @@ func PerformHandShake(conn net.Conn,reader *bufio.Reader,server *Server,) error 
 
 
     _, err = conn.Write(
-        []byte(protocol.ResponseArray([]string{
-            "REPLCONF",
-            "capa",
-            "psync2",
-        })),
-    )
+        []byte(protocol.ResponseArray([]string{"REPLCONF","capa","psync2"})),)
+
     if err != nil {
         return err
     }
 
     response, err = readRESPResponse(reader)
+
     if err != nil {
         return err
     }
 
     if string(response) != "+OK\r\n" {
-        return fmt.Errorf(
-            "expected OK after capa, got %q",
-            string(response),
-        )
+        return fmt.Errorf("expected OK after capa, got %q",string(response),)
     }
 
 
-    _, err = conn.Write(
-        []byte(protocol.ResponseArray([]string{
-            "PSYNC",
-            "?",
-            "-1",
-        })),
-    )
+    _, err = conn.Write([]byte(protocol.ResponseArray([]string{"PSYNC","?","-1",})),)
     if err != nil {
         return err
     }
@@ -173,6 +163,11 @@ func PerformHandShake(conn net.Conn,reader *bufio.Reader,server *Server,) error 
     if err != nil {
         return err
     }
+	err = server.HandleFullResync(response)
+
+	if err != nil{
+		return nil
+	}
 
     fmt.Println("PSYNC response:", string(response))
 
@@ -200,4 +195,25 @@ func readRESPResponse(reader *bufio.Reader) ([]byte, error) {
             firstByte,
         )
     }
+}
+func (s *Server) HandleFullResync(response []byte) error {
+    parts := strings.Fields(string(response))
+
+    if len(parts) != 4 {
+        return fmt.Errorf("invalid FULLRESYNC response: %q", string(response))
+    }
+
+    if parts[0] != "+FULLRESYNC" {
+        return fmt.Errorf("expected FULLRESYNC, got: %q", string(response))
+    }
+
+    offset, err := strconv.ParseInt(parts[3], 10, 64)
+    if err != nil {
+        return fmt.Errorf("invalid replication offset: %q", parts[3])
+    }
+
+    s.masterReplID = parts[1]
+    s.masterReplOffset = offset
+
+    return nil
 }
