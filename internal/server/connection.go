@@ -121,7 +121,8 @@ func Execute(commands []string, server *Server) []byte {
 	switch comm {
 	
 	case "INFO":
-    	return []byte(protocol.Response_bulk_string("role:master"))
+		
+    	return []byte(protocol.Response_bulk_string("role:"+server.role))
 	case "PING":
 		return ([]byte("+PONG\r\n"))
 	case "ECHO":
