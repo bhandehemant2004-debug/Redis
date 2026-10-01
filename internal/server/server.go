@@ -26,7 +26,11 @@ func (s* Server)Start(){
 	 	os.Exit(1)
 	}
 	if s.role =="slave"{
+		err := StartReplication(s)
 
+		if err != nil {
+			
+		}
 	}
 	
 	for{
@@ -66,5 +70,5 @@ func StartReplication(server* Server)error{
     conn.Write([]byte(protocol.ResponseArray([]string{"PING"})))
 
     fmt.Println("Connected to master:", address)
-
+	return  nil 
 }
