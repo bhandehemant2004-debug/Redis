@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 
 	"github.com/codecrafters-io/redis-starter-go/internal/client"
 	"github.com/codecrafters-io/redis-starter-go/internal/protocol"
@@ -26,12 +27,8 @@ func (s* Server)Start(){
 	 	os.Exit(1)
 	}
 	if s.role =="slave"{
-		err := StartReplication(s)
-		if err != nil {
-
-		}
+		go StartReplication(s)
 	}
-	
 	for{
 		conn, err := l.Accept()
 		if err != nil {
@@ -57,12 +54,12 @@ func NewServer(address string, role string , masterHost string , masterPort stri
     }
 }
 
-func StartReplication(server* Server)error{
+func StartReplication(server* Server){
 	address := net.JoinHostPort(server.masterHost,server.masterPort,)
 
     conn, err := net.Dial("tcp", address)
     if err != nil {
-        return err
+        return 
     }
 
 
@@ -72,18 +69,35 @@ func StartReplication(server* Server)error{
 
 	pending := make([]byte, 0)
 
+	
+
 	for {
 
 		n, err := conn.Read(readBuffer)
 		if err != nil {
-			return err
+			return 
 		}
-		conn.Write([]byte(protocol.ResponseArray([]string{"REPLCONF","listening-port",server.port_addr[1:]})))
-		conn.Write([]byte(protocol.ResponseArray([]string{"REPLCONF","capa","psync2"})))
+		commands, remaining, ok := protocol.Parser(pending)
+		
 		pending = append(pending, readBuffer[:n]...)
-		break
-	}
+		if !ok {
+			continue
+		}
 
-    
-	return  nil 
+		pending = remaining
+
+		comm := strings.ToUpper(commands[0])
+
+		switch comm {
+		case "PONG":
+			conn.Write([]byte(protocol.ResponseArray([]string{"REPLCONF","listening-port",server.port_addr[1:]})))
+			conn.Write([]byte(protocol.ResponseArray([]string{"REPLCONF","capa","psync2"})))
+
+		case "+FULLRESYNC":
+			conn.Write([]byte(protocol.ResponseArray([]string{"PSYNC","?","-1"})))
+		}
+		
+		
+	}
+ 
 }
