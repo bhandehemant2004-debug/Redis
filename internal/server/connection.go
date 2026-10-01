@@ -1,31 +1,25 @@
 package server
 
 import (
-	"net"
 	"strings"
-
+	"github.com/codecrafters-io/redis-starter-go/internal/client"
 	"github.com/codecrafters-io/redis-starter-go/internal/command"
 	"github.com/codecrafters-io/redis-starter-go/internal/protocol"
-	"github.com/codecrafters-io/redis-starter-go/internal/util"
 )
 
 
-func handleconnection(conn net.Conn, server *Server) {
-	defer conn.Close()
+func handleconnection(client *client.Client, server *Server) {
+	defer client.Close()
 	
 	readBuffer := make([]byte, 1024)
+
 	pending := make([]byte, 0)
-	
-	Queue := util.NewQueue()
 
-	watchedKeys:= make(map[string]uint64)
-	
 
-	is_multi_command_active := false
 
 	for {
 
-		n, err := conn.Read(readBuffer)
+		n, err := client.Conn().Read(readBuffer)
 		if err != nil {
 			return
 		}
@@ -45,17 +39,28 @@ func handleconnection(conn net.Conn, server *Server) {
 		
 		switch comm {
 			case "EXEC":
-				if !is_multi_command_active {
-					conn.Write([]byte("-ERR EXEC without MULTI\r\n"))
+				if !client.IsMulti() {
+					client.WriteResponse([]byte("-ERR EXEC without MULTI\r\n"))
 					continue
     			}
-				 responses := make([][]byte, 0)
+				if client.HasWatchedKeyChanged(server.storage) {
+					client.Queue().Clear()
+					for k := range client.WatchedKeys() {
+						delete(client.WatchedKeys(), k)
+					}
+					client.SetMulti(false)
 
-				for !Queue.IsEmpty() {
-					queuedCommands, _ := Queue.Pop()
-					if _,exists := watchedKeys[queuedCommands[2]];exists{
+					client.WriteResponse([]byte("*-1\r\n"))
+					continue
+				}
+
+				responses := make([][]byte, 0)
+
+				for !client.Queue().IsEmpty() {
+					queuedCommands, _ := client.Queue().Pop()
+					if _,exists := client.WatchedKeys()[queuedCommands[2]];exists{
 						responses =nil
-						conn.Write([]byte("*-1\r\n"))
+						client.WriteResponse([]byte("*-1\r\n"))
 						break
 					}
 					response := Execute(queuedCommands, server)
@@ -66,45 +71,46 @@ func handleconnection(conn net.Conn, server *Server) {
 					continue
 				}
 
-				is_multi_command_active = false
-
+				client.SetMulti(false)
 				response := protocol.ResponseTransaction(responses)
 
-				conn.Write([]byte(response))
+				client.WriteResponse([]byte(response))
 
 			case "MULTI":
-				if is_multi_command_active {
-					conn.Write([]byte("-ERR MULTI calls can not be nested\r\n"))
+				if client.IsMulti() {
+					client.WriteResponse([]byte("-ERR MULTI calls can not be nested\r\n"))
 					continue
 				}
-				is_multi_command_active = true
-				conn.Write([]byte("+OK\r\n"))
+				client.SetMulti(true)
+				client.WriteResponse([]byte("+OK\r\n"))
 			case "DISCARD":
-				if !is_multi_command_active{
-					conn.Write([]byte("-ERR DISCARD without MULTI\r\n"))
+				if !client.IsMulti(){
+					client.WriteResponse([]byte("-ERR DISCARD without MULTI\r\n"))
 					continue
 				}
-				for !Queue.IsEmpty() {
-					 Queue.Pop()
+				for !client.Queue().IsEmpty() {
+					client.Queue().Pop()
 				}
-				is_multi_command_active = false
-				conn.Write([]byte("+OK\r\n"))
+				client.SetMulti(false)
+				client.WriteResponse([]byte("+OK\r\n"))
 			case "WATCH":
-				if is_multi_command_active{
-					conn.Write([]byte("-ERR WATCH inside MULTI is not allowed\r\n"))
+				if client.IsMulti(){
+					client.WriteResponse([]byte("-ERR WATCH inside MULTI is not allowed\r\n"))
 					continue
 				}
-				watchedKeys[commands[1]]=1
+				for _,c := range commands[1:]{
+					client.WatchedKeys()[c]=server.storage.GetVersion(c)
+				}
 				result := command.HandleWatchCommand(commands,server.storage)
-				conn.Write([]byte(result))
+				client.WriteResponse([]byte(result))
 			default:
-				if is_multi_command_active {
-					Queue.Push(commands)
-					conn.Write([]byte("+QUEUED\r\n"))
+				if client.IsMulti() {
+					client.Queue().Push(commands)
+					client.WriteResponse([]byte("+QUEUED\r\n"))
 					continue
 				}
 				response := Execute(commands, server)
-				conn.Write(response)
+				client.WriteResponse(response)
 		}
 			
 

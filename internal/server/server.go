@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+
+	"github.com/codecrafters-io/redis-starter-go/internal/client"
 	"github.com/codecrafters-io/redis-starter-go/internal/store"
 )
 
@@ -24,7 +26,8 @@ func (s* Server)Start(){
 			fmt.Println("Error accepting connection: ", err.Error())
 			os.Exit(1)}
 		
-		go handleconnection(conn,s)
+		newclient := client.NewClient(conn)
+		go handleconnection(newclient,s)
 	}
 	
 }

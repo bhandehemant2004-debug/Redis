@@ -2,6 +2,7 @@ package store
 
 import (
 	"time"
+
 	"github.com/codecrafters-io/redis-starter-go/internal/util"
 )
 
@@ -18,6 +19,8 @@ type Storage interface {
 	AddStreamBlocking(streamkey string, waiter *util.StreamWaiter)
     GetStreamBlocking(streamkey string) ([]*util.StreamWaiter, bool)
     RemoveStreamBlocking(streamkey string, waiter *util.StreamWaiter)
+	GetVersion(key string)uint64
+	SetVersion(key string , version uint64 )
 }
 
 
@@ -25,6 +28,7 @@ type MemoryStorage struct {
 	data map[string]util.Redisobj
 	blocked map[string][]*util.Waiter
 	streamBlocked map[string][]*util.StreamWaiter
+	versions map[string]uint64
 }
 
 func NewMemoryStorage() *MemoryStorage {
@@ -32,6 +36,7 @@ func NewMemoryStorage() *MemoryStorage {
 		data: make(map[string]util.Redisobj),
 		blocked: make(map[string][]*util.Waiter),
 		streamBlocked: make(map[string][]*util.StreamWaiter),
+		versions: make(map[string]uint64),
 	}
 }
 
@@ -146,6 +151,19 @@ func (s *MemoryStorage)GetStreamBlocking(streamkey string )([]*util.StreamWaiter
 
     return waiters, true
 
+}
+func (s *MemoryStorage)GetVersion(key string)uint64{
+	obj , exists := s.versions[key]
+
+	if exists{
+		return obj
+	}
+	return 0
+}
+
+
+func (s *MemoryStorage)SetVersion(key string,version uint64){
+	s.versions[key]=version
 }
 
 

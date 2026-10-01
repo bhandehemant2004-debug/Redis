@@ -2,23 +2,27 @@ package util
 
 type Queue [][]string
 
-func NewQueue() Queue {
-    return Queue{}
+func (q *Queue) Clear() {
+	panic("unimplemented")
 }
 
-func (q *Queue) Push(value[] string) {
-    *q = append(*q, value)
+func NewQueue() Queue {
+	return Queue{}
+}
+
+func (q *Queue) Push(value []string) {
+	*q = append(*q, value)
 }
 
 func (q *Queue) Pop() ([]string, bool) {
-    if len(*q) == 0 {
-        return []string{}, false
-    }
+	if len(*q) == 0 {
+		return []string{}, false
+	}
 
-    value := (*q)[0]
-    *q = (*q)[1:]
+	value := (*q)[0]
+	*q = (*q)[1:]
 
-    return value, true
+	return value, true
 }
 
 func (q Queue) IsEmpty() bool {
