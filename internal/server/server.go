@@ -22,7 +22,7 @@ type  Server struct{
 func (s* Server)Start(){
 	l, err := net.Listen("tcp", s.port_addr)
 	if err != nil {
-	 	fmt.Println("Failed to bind to port "+s.port_addr)
+	 	fmt.Println("Failed to bind to port "+s.port_addr[1:])
 	 	os.Exit(1)
 	}
 	if s.role =="slave"{
