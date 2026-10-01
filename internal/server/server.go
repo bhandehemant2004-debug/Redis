@@ -12,6 +12,9 @@ import (
 type  Server struct{
 	port_addr string
 	storage store.Storage
+	role string 
+	masterHost string
+    masterPort string
 }
 func (s* Server)Start(){
 	l, err := net.Listen("tcp", s.port_addr)
@@ -32,10 +35,13 @@ func (s* Server)Start(){
 	
 }
 
-func NewServer(address string) *Server {
+func NewServer(address string, role string , masterHost string , masterPort string) *Server {
 	storage := store.NewMemoryStorage()
     return &Server{
        port_addr: address,
 	   storage: storage,
+	   role: role,
+	    masterHost: masterHost,
+        masterPort: masterPort,
     }
 }
