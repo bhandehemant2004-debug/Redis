@@ -2,20 +2,18 @@ package server
 
 import (
 	"strings"
+
 	"github.com/codecrafters-io/redis-starter-go/internal/client"
 	"github.com/codecrafters-io/redis-starter-go/internal/command"
 	"github.com/codecrafters-io/redis-starter-go/internal/protocol"
 )
 
-
 func handleconnection(client *client.Client, server *Server) {
 	defer client.Close()
-	
+
 	readBuffer := make([]byte, 1024)
 
 	pending := make([]byte, 0)
-
-
 
 	for {
 
@@ -36,178 +34,176 @@ func handleconnection(client *client.Client, server *Server) {
 
 		comm := strings.ToUpper(commands[0])
 
-		
 		switch comm {
-			case "EXEC":
-				if !client.IsMulti() {
-					client.WriteResponse([]byte("-ERR EXEC without MULTI\r\n"))
-					continue
-    			}
-				if client.HasWatchedKeyChanged(server.storage) {
-					client.Queue().Clear()
-					for k := range client.WatchedKeys() {
-						delete(client.WatchedKeys(), k)
-					}
-					client.SetMulti(false)
+		case "EXEC":
+			if !client.IsMulti() {
+				client.WriteResponse([]byte("-ERR EXEC without MULTI\r\n"))
+				continue
+			}
+			if client.HasWatchedKeyChanged(server.storage) {
+				client.Queue().Clear()
+				for k := range client.WatchedKeys() {
+					delete(client.WatchedKeys(), k)
+				}
+				client.SetMulti(false)
 
+				client.WriteResponse([]byte("*-1\r\n"))
+				continue
+			}
+
+			responses := make([][]byte, 0)
+
+			for !client.Queue().IsEmpty() {
+				queuedCommands, _ := client.Queue().Pop()
+				if _, exists := client.WatchedKeys()[queuedCommands[2]]; exists {
+					responses = nil
 					client.WriteResponse([]byte("*-1\r\n"))
-					continue
+					break
 				}
+				response := Execute(queuedCommands, server)
 
-				responses := make([][]byte, 0)
+				responses = append(responses, response)
+			}
+			if responses == nil {
+				continue
+			}
 
-				for !client.Queue().IsEmpty() {
-					queuedCommands, _ := client.Queue().Pop()
-					if _,exists := client.WatchedKeys()[queuedCommands[2]];exists{
-						responses =nil
-						client.WriteResponse([]byte("*-1\r\n"))
-						break
-					}
-					response := Execute(queuedCommands, server)
+			client.SetMulti(false)
+			response := protocol.ResponseTransaction(responses)
 
-					responses = append(responses, response)
-				}
-				if responses == nil{
-					continue
-				}
+			client.WriteResponse([]byte(response))
 
-				client.SetMulti(false)
-				response := protocol.ResponseTransaction(responses)
-
-				client.WriteResponse([]byte(response))
-
-			case "MULTI":
-				if client.IsMulti() {
-					client.WriteResponse([]byte("-ERR MULTI calls can not be nested\r\n"))
-					continue
-				}
-				client.SetMulti(true)
-				client.WriteResponse([]byte("+OK\r\n"))
-			case "DISCARD":
-				if !client.IsMulti(){
-					client.WriteResponse([]byte("-ERR DISCARD without MULTI\r\n"))
-					continue
-				}
-				for !client.Queue().IsEmpty() {
-					client.Queue().Pop()
-				}
-				client.SetMulti(false)
-				client.WriteResponse([]byte("+OK\r\n"))
-			case "WATCH":
-				if client.IsMulti(){
-					client.WriteResponse([]byte("-ERR WATCH inside MULTI is not allowed\r\n"))
-					continue
-				}
-				for _,c := range commands[1:]{
-					client.WatchedKeys()[c]=server.storage.GetVersion(c)
-				}
-				result := command.HandleWatchCommand(commands,server.storage)
-				client.WriteResponse([]byte(result))
-			default:
-				if client.IsMulti() {
-					client.Queue().Push(commands)
-					client.WriteResponse([]byte("+QUEUED\r\n"))
-					continue
-				}
-				response := Execute(commands, server)
-				client.WriteResponse(response)
+		case "MULTI":
+			if client.IsMulti() {
+				client.WriteResponse([]byte("-ERR MULTI calls can not be nested\r\n"))
+				continue
+			}
+			client.SetMulti(true)
+			client.WriteResponse([]byte("+OK\r\n"))
+		case "DISCARD":
+			if !client.IsMulti() {
+				client.WriteResponse([]byte("-ERR DISCARD without MULTI\r\n"))
+				continue
+			}
+			for !client.Queue().IsEmpty() {
+				client.Queue().Pop()
+			}
+			client.SetMulti(false)
+			client.WriteResponse([]byte("+OK\r\n"))
+		case "WATCH":
+			if client.IsMulti() {
+				client.WriteResponse([]byte("-ERR WATCH inside MULTI is not allowed\r\n"))
+				continue
+			}
+			for _, c := range commands[1:] {
+				client.WatchedKeys()[c] = server.storage.GetVersion(c)
+			}
+			result := command.HandleWatchCommand(commands, server.storage)
+			client.WriteResponse([]byte(result))
+		default:
+			if client.IsMulti() {
+				client.Queue().Push(commands)
+				client.WriteResponse([]byte("+QUEUED\r\n"))
+				continue
+			}
+			response := Execute(commands, server)
+			client.WriteResponse(response)
 		}
-			
 
-		}
-		
 	}
 
-	func Execute(commands []string, server *Server)[]byte{
-		comm := strings.ToUpper(commands[0])
-		switch comm {
-			case "PING":
-				return([]byte("+PONG\r\n"))
-			case "ECHO":
-				result := command.HandleechoCommand(commands)
-				response := protocol.Response_bulk_string(result)
-				return([]byte(response))
-			case "SET":
-				result,ok := command.HandleSetCommand(commands,server.storage)
-				if ok {
-					return([]byte(result))
-				}
-				
-			case "GET":
-				result,ok := command.HandgetCommand(commands,server.storage)
-				if !ok {
-					return([]byte("$-1\r\n"))
-				}
-				switch result.Type{
-					case "string":
-						return([]byte(protocol.Response_bulk_string(result.Value.(string))))
-					}
-				return []byte("$-1\r\n")
-			case "RPUSH":
-				result := command.HandleRpushCommand(commands,server.storage)
-				respond := protocol.AppendInteger(result)
-				return([]byte(respond))		
-				
-			case "LRANGE":
-				result := command.HandleLrangeCommand(commands,server.storage)
-				respond := protocol.ResponseArray(result)
-				return([]byte(respond))
-			case "LPUSH":
-				result := command.HandleLpushCommand(commands,server.storage)
-				respond := protocol.AppendInteger(result)
-				return([]byte(respond))
-			case "LLEN":
-				result := command.HandleLlenCommand(commands,server.storage)
-				respond := protocol.AppendInteger(result)
-				return([]byte(respond))
-			case "LPOP":
-				result := command.HandleLpopCommand(commands,server.storage)
-				if len(commands)==2{
-					if len(result)==0{
-						return([]byte("$-1\r\n"))
-					}
-					response := protocol.Response_bulk_string(result[0])
-					return([]byte(response));
-					
-				}
-				response := protocol.ResponseArray(result)
-				return([]byte(response))
-			case "BLPOP":
-				result := command.HandleBlpopCommand(commands,server.storage)
-				if len(result)==0 {
-					return([]byte("*-1\r\n"))
-				}
-				response := protocol.ResponseArray(result)
-				return([]byte(response))
-			case "TYPE":
-				response := command.HandleTypeCommand(commands,server.storage)
-				return([]byte(response))
+}
 
-			case "XADD":
-				result,error := command.HandleXaddCommand(commands,server.storage)
-				if error {
-					response := protocol.SimpleError(result);
-					return([]byte(response))
-				}
-				
-				response := protocol.Response_bulk_string(result)
-				return([]byte(response))
-			
-			case "XRANGE":
-				result := command.HandleXrangeCommand(commands,server.storage)
-				response := protocol.ResponseXRange(result)
-				return([]byte(response))
-			case "XREAD":
-				keys,collection := command.HandleXreadCommand(commands,server.storage)
-				response := protocol.ResponseXRead(keys,collection)
-				return([]byte(response))
-
-			case "INCR":
-				response := command.HandleIncrCommand(commands,server.storage)
-				return([]byte(response+"\r\n"))
-			
-			default:
-				return []byte("-ERR unknown command\r\n")
+func Execute(commands []string, server *Server) []byte {
+	comm := strings.ToUpper(commands[0])
+	switch comm {
+	case "PING":
+		return ([]byte("+PONG\r\n"))
+	case "ECHO":
+		result := command.HandleechoCommand(commands)
+		response := protocol.Response_bulk_string(result)
+		return ([]byte(response))
+	case "SET":
+		result, ok := command.HandleSetCommand(commands, server.storage)
+		if ok {
+			return ([]byte(result))
 		}
+
+	case "GET":
+		result, ok := command.HandgetCommand(commands, server.storage)
+		if !ok {
+			return ([]byte("$-1\r\n"))
+		}
+		switch result.Type {
+		case "string":
+			return ([]byte(protocol.Response_bulk_string(result.Value.(string))))
+		}
+		return []byte("$-1\r\n")
+	case "RPUSH":
+		result := command.HandleRpushCommand(commands, server.storage)
+		respond := protocol.AppendInteger(result)
+		return ([]byte(respond))
+
+	case "LRANGE":
+		result := command.HandleLrangeCommand(commands, server.storage)
+		respond := protocol.ResponseArray(result)
+		return ([]byte(respond))
+	case "LPUSH":
+		result := command.HandleLpushCommand(commands, server.storage)
+		respond := protocol.AppendInteger(result)
+		return ([]byte(respond))
+	case "LLEN":
+		result := command.HandleLlenCommand(commands, server.storage)
+		respond := protocol.AppendInteger(result)
+		return ([]byte(respond))
+	case "LPOP":
+		result := command.HandleLpopCommand(commands, server.storage)
+		if len(commands) == 2 {
+			if len(result) == 0 {
+				return ([]byte("$-1\r\n"))
+			}
+			response := protocol.Response_bulk_string(result[0])
+			return ([]byte(response))
+
+		}
+		response := protocol.ResponseArray(result)
+		return ([]byte(response))
+	case "BLPOP":
+		result := command.HandleBlpopCommand(commands, server.storage)
+		if len(result) == 0 {
+			return ([]byte("*-1\r\n"))
+		}
+		response := protocol.ResponseArray(result)
+		return ([]byte(response))
+	case "TYPE":
+		response := command.HandleTypeCommand(commands, server.storage)
+		return ([]byte(response))
+
+	case "XADD":
+		result, error := command.HandleXaddCommand(commands, server.storage)
+		if error {
+			response := protocol.SimpleError(result)
+			return ([]byte(response))
+		}
+
+		response := protocol.Response_bulk_string(result)
+		return ([]byte(response))
+
+	case "XRANGE":
+		result := command.HandleXrangeCommand(commands, server.storage)
+		response := protocol.ResponseXRange(result)
+		return ([]byte(response))
+	case "XREAD":
+		keys, collection := command.HandleXreadCommand(commands, server.storage)
+		response := protocol.ResponseXRead(keys, collection)
+		return ([]byte(response))
+
+	case "INCR":
+		response := command.HandleIncrCommand(commands, server.storage)
+		return ([]byte(response + "\r\n"))
+
+	default:
 		return []byte("-ERR unknown command\r\n")
 	}
+	return []byte("-ERR unknown command\r\n")
+}
