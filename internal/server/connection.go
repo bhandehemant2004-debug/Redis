@@ -119,6 +119,9 @@ func handleconnection(client *client.Client, server *Server) {
 func Execute(commands []string, server *Server) []byte {
 	comm := strings.ToUpper(commands[0])
 	switch comm {
+	
+	case "INFO":
+    	return []byte(protocol.Response_bulk_string("role:master"))
 	case "PING":
 		return ([]byte("+PONG\r\n"))
 	case "ECHO":
