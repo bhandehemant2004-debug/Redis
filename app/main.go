@@ -35,7 +35,7 @@ func main() {
             log.Fatal("invalid --replicaof: expected <host> <port>")
         }
 
-        role = "replica"
+        role = "slave"
         masterHost = parts[0]
         masterPort = parts[1]
     }
