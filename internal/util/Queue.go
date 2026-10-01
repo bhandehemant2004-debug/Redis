@@ -3,7 +3,7 @@ package util
 type Queue [][]string
 
 func (q *Queue) Clear() {
-	panic("unimplemented")
+	 *q = nil
 }
 
 func NewQueue() Queue {
