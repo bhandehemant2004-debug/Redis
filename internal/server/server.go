@@ -27,9 +27,8 @@ func (s* Server)Start(){
 	}
 	if s.role =="slave"{
 		err := StartReplication(s)
-
 		if err != nil {
-			
+
 		}
 	}
 	
@@ -69,6 +68,22 @@ func StartReplication(server* Server)error{
 
     conn.Write([]byte(protocol.ResponseArray([]string{"PING"})))
 
-    fmt.Println("Connected to master:", address)
+	readBuffer := make([]byte, 1024)
+
+	pending := make([]byte, 0)
+
+	for {
+
+		n, err := conn.Read(readBuffer)
+		if err != nil {
+			return err
+		}
+		conn.Write([]byte(protocol.ResponseArray([]string{"REPLCONF","listening-port",server.port_addr})))
+		conn.Write([]byte(protocol.ResponseArray([]string{"REPLCONF","capa","psync2"})))
+		pending = append(pending, readBuffer[:n]...)
+		break
+	}
+
+    
 	return  nil 
 }

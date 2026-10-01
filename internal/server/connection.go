@@ -102,6 +102,9 @@ func handleconnection(client *client.Client, server *Server) {
 		case "UNWATCH":
 			clear(client.WatchedKeys())
 			client.WriteResponse([]byte("+OK\r\n"))
+
+		case "REPLCONF":
+			client.WriteResponse([]byte("+OK\r\n"))
 		default:
 			if client.IsMulti() {
 				client.Queue().Push(commands)
