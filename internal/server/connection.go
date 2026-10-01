@@ -105,6 +105,9 @@ func handleconnection(client *client.Client, server *Server) {
 
 		case "REPLCONF":
 			client.WriteResponse([]byte("+OK\r\n"))
+
+		case "PSYNC":
+			client.WriteResponse([]byte(protocol.ResponseArray([]string{"+FULLRESYNC",server.masterReplID," 0\r\n"})))
 		default:
 			if client.IsMulti() {
 				client.Queue().Push(commands)
