@@ -57,11 +57,6 @@ func handleconnection(client *client.Client, server *Server) {
 
 			for !client.Queue().IsEmpty() {
 				queuedCommands, _ := client.Queue().Pop()
-				if _, exists := client.WatchedKeys()[queuedCommands[2]]; exists {
-					responses = nil
-					client.WriteResponse([]byte("*-1\r\n"))
-					break
-				}
 				response := Execute(queuedCommands, server)
 
 				responses = append(responses, response)
