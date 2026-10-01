@@ -21,6 +21,7 @@ type Storage interface {
     RemoveStreamBlocking(streamkey string, waiter *util.StreamWaiter)
 	GetVersion(key string)uint64
 	SetVersion(key string , version uint64 )
+	IncrementVersion(key string)
 }
 
 
@@ -164,6 +165,16 @@ func (s *MemoryStorage)GetVersion(key string)uint64{
 
 func (s *MemoryStorage)SetVersion(key string,version uint64){
 	s.versions[key]=version
+}
+
+func(s* MemoryStorage)IncrementVersion(key string){
+	obj , exists := s.versions[key]
+
+	if exists{
+		s.versions[key]=obj+1
+	}
+	
+	s.versions[key]=1
 }
 
 
