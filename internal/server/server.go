@@ -15,6 +15,8 @@ type  Server struct{
 	role string 
 	masterHost string
     masterPort string
+	masterReplID       string
+    masterReplOffset   int64
 }
 func (s* Server)Start(){
 	l, err := net.Listen("tcp", s.port_addr)
@@ -43,5 +45,7 @@ func NewServer(address string, role string , masterHost string , masterPort stri
 	   role: role,
 	    masterHost: masterHost,
         masterPort: masterPort,
+		masterReplID: "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb",
+        masterReplOffset: 0,
     }
 }

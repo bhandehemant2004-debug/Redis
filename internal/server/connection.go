@@ -121,8 +121,13 @@ func Execute(commands []string, server *Server) []byte {
 	switch comm {
 	
 	case "INFO":
-		
-    	return []byte(protocol.Response_bulk_string("role:"+server.role))
+		info := fmt.Sprintf(
+        "role:%s\r\nmaster_replid:%s\r\nmaster_repl_offset:%d",
+        server.role,
+        server.masterReplID,
+        server.masterReplOffset,
+    )
+    	return []byte(protocol.Response_bulk_string(info))
 	case "PING":
 		return ([]byte("+PONG\r\n"))
 	case "ECHO":
