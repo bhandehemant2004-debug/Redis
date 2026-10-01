@@ -86,6 +86,7 @@ func handleconnection(client *client.Client, server *Server) {
 				client.Queue().Pop()
 			}
 			client.SetMulti(false)
+			clear(client.WatchedKeys())
 			client.WriteResponse([]byte("+OK\r\n"))
 		case "WATCH":
 			if client.IsMulti() {
