@@ -45,9 +45,7 @@ func handleconnection(client *client.Client, server *Server) {
 				fmt.Println("WATCH conflict detected")
 
 				client.Queue().Clear()
-				for k := range client.WatchedKeys() {
-					delete(client.WatchedKeys(), k)
-				}
+				clear(client.WatchedKeys())
 				client.SetMulti(false)
 
 				client.WriteResponse([]byte("*-1\r\n"))
