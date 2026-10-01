@@ -97,6 +97,10 @@ func handleconnection(client *client.Client, server *Server) {
 			}
 			result := command.HandleWatchCommand(commands, server.storage)
 			client.WriteResponse([]byte(result))
+
+		case "UNWATCH":
+			clear(client.WatchedKeys())
+			client.WriteResponse([]byte("+OK\r\n"))
 		default:
 			if client.IsMulti() {
 				client.Queue().Push(commands)
