@@ -43,6 +43,7 @@ func NewMemoryStorage() *MemoryStorage {
 
 func (s *MemoryStorage) Set(key string, value util.Redisobj) (string, bool) {
 	s.data[key] = value
+	s.versions[key]++
 	return "+OK\r\n", true
 }
 
@@ -168,13 +169,7 @@ func (s *MemoryStorage)SetVersion(key string,version uint64){
 }
 
 func(s* MemoryStorage)IncrementVersion(key string){
-	obj , exists := s.versions[key]
-
-	if exists{
-		s.versions[key]=obj+1
-	}
-	
-	s.versions[key]=1
+	s.versions[key]++
 }
 
 

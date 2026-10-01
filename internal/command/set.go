@@ -22,7 +22,6 @@ func HandleSetCommand(args []string,storage store.Storage)( string , bool){
 				Expiry:  true,
 			}
 			storage.Set(key, obj)
-			storage.IncrementVersion(key)
 			return "+OK\r\n", true	
 		}	
 	}	
@@ -36,7 +35,6 @@ func HandleSetCommand(args []string,storage store.Storage)( string , bool){
 				Expiry:  true,
 			}
 			storage.Set(key, obj)
-			storage.IncrementVersion(key)
 			return "+OK\r\n", true
 		}
 	}
@@ -46,7 +44,6 @@ func HandleSetCommand(args []string,storage store.Storage)( string , bool){
 		Type: "string",
 	}
 	storage.Set(key, obj)
-	storage.IncrementVersion(key)
 	return "+OK\r\n", true	
 	
 }
