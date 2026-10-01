@@ -78,7 +78,7 @@ func StartReplication(server* Server)error{
 		if err != nil {
 			return err
 		}
-		conn.Write([]byte(protocol.ResponseArray([]string{"REPLCONF","listening-port",server.port_addr})))
+		conn.Write([]byte(protocol.ResponseArray([]string{"REPLCONF","listening-port",server.port_addr[1:]})))
 		conn.Write([]byte(protocol.ResponseArray([]string{"REPLCONF","capa","psync2"})))
 		pending = append(pending, readBuffer[:n]...)
 		break
