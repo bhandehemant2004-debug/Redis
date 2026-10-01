@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/codecrafters-io/redis-starter-go/internal/client"
@@ -41,6 +42,8 @@ func handleconnection(client *client.Client, server *Server) {
 				continue
 			}
 			if client.HasWatchedKeyChanged(server.storage) {
+				fmt.Println("WATCH conflict detected")
+
 				client.Queue().Clear()
 				for k := range client.WatchedKeys() {
 					delete(client.WatchedKeys(), k)
@@ -50,6 +53,7 @@ func handleconnection(client *client.Client, server *Server) {
 				client.WriteResponse([]byte("*-1\r\n"))
 				continue
 			}
+			fmt.Println("NO WATCH conflict detected")
 
 			responses := make([][]byte, 0)
 
