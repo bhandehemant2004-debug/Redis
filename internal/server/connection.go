@@ -109,8 +109,8 @@ func handleconnection(client *client.Client, server *Server) {
 
 		case "PSYNC":
 			client.WriteResponse([]byte("+FULLRESYNC "+server.masterReplID +" 0\r\n"))
-			result ,_ := rdb.EncodeRDB(server.storage)
-			client.WriteResponse(result)
+			result ,_ := rdb.EncodeRDB(&server.storage)
+			rdb.SendRDB(client.Conn(),result)
 		default:
 			if client.IsMulti() {
 				client.Queue().Push(commands)
