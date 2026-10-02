@@ -14,7 +14,7 @@ const (
 func EncodeRDB(storage store.Storage) ([]byte, error) {
 	writer := NewWriter()
 
-	writer.WriteString("$")
+	//writer.WriteString("$")
 	writer.WriteBytes([]byte("REDIS"))
 	writer.WriteBytes([]byte("0003"))
 
