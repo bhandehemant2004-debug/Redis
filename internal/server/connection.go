@@ -7,6 +7,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/internal/client"
 	"github.com/codecrafters-io/redis-starter-go/internal/command"
 	"github.com/codecrafters-io/redis-starter-go/internal/protocol"
+	"github.com/codecrafters-io/redis-starter-go/internal/rdb"
 )
 
 func handleconnection(client *client.Client, server *Server) {
@@ -108,6 +109,8 @@ func handleconnection(client *client.Client, server *Server) {
 
 		case "PSYNC":
 			client.WriteResponse([]byte("+FULLRESYNC "+server.masterReplID +" 0\r\n"))
+			result ,_ := rdb.EncodeRDB(server.storage)
+			client.WriteResponse(result)
 		default:
 			if client.IsMulti() {
 				client.Queue().Push(commands)

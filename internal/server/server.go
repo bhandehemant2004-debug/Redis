@@ -10,6 +10,7 @@ import (
 
 	"github.com/codecrafters-io/redis-starter-go/internal/client"
 	"github.com/codecrafters-io/redis-starter-go/internal/protocol"
+	"github.com/codecrafters-io/redis-starter-go/internal/rdb"
 	"github.com/codecrafters-io/redis-starter-go/internal/store"
 )
 
@@ -29,7 +30,7 @@ func (s* Server)Start(){
 	 	os.Exit(1)
 	}
 	if s.role =="slave"{
-		go StartReplication(s)
+		go s.StartReplication()
 	}
 	for{
 		conn, err := l.Accept()
@@ -56,7 +57,7 @@ func NewServer(address string, role string , masterHost string , masterPort stri
     }
 }
 
-func StartReplication(server *Server) {
+func (server *Server) StartReplication() {
     address := net.JoinHostPort(server.masterHost,server.masterPort,)
 
     conn, err := net.Dial("tcp", address)
@@ -170,6 +171,7 @@ func PerformHandShake(conn net.Conn,reader *bufio.Reader,server *Server,) error 
 	}
 
     fmt.Println("PSYNC response:", string(response))
+    rdb.Decode(reader,&server.storage)
 
     return nil
 }
