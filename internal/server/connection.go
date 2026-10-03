@@ -63,7 +63,7 @@ func handleconnection(client *client.Client, server *Server) {
 
 			for !client.Queue().IsEmpty() {
 				queuedCommands, _ := client.Queue().Pop()
-				response := Execute(queuedCommands, server)
+				response := Execute(queuedCommands, server,client)
 
 				responses = append(responses, response)
 			}
@@ -125,7 +125,7 @@ func handleconnection(client *client.Client, server *Server) {
 				client.WriteResponse([]byte("+QUEUED\r\n"))
 				continue
 			}
-			response := Execute(commands, server)
+			response := Execute(commands, server,client)
 			client.WriteResponse(response)
 		}
 
@@ -133,7 +133,7 @@ func handleconnection(client *client.Client, server *Server) {
 
 }
 
-func Execute(commands []string, server *Server) []byte {
+func Execute(commands []string, server *Server,client *client.Client) []byte {
 	comm := strings.ToUpper(commands[0])
 	switch comm {
 	
@@ -146,7 +146,8 @@ func Execute(commands []string, server *Server) []byte {
     )
     	return []byte(protocol.Response_bulk_string(info))
 	case "PING":
-		return ([]byte("+PONG\r\n"))
+		result := command.HandlePingCommand(client)
+		return result
 	case "ECHO":
 		result := command.HandleechoCommand(commands)
 		response := protocol.Response_bulk_string(result)
