@@ -34,6 +34,12 @@ func handleconnection(client *client.Client, server *Server) {
 		pending = remaining
 
 		comm := strings.ToUpper(commands[0])
+		if client.IsSubscribed() && !isAllowedInSubscribedMode(comm) {
+			response := fmt.Sprintf("-ERR Can't execute '%s': only (P|S)SUBSCRIBE / (P|S)UNSUBSCRIBE / PING / QUIT / RESET are allowed in this context\r\n",strings.ToLower(comm),)
+
+			client.WriteResponse([]byte(response))
+			continue
+		}
 
 		switch comm {
 		case "EXEC":
@@ -229,4 +235,17 @@ func Execute(commands []string, server *Server) []byte {
 		return []byte("-ERR unknown command\r\n")
 	}
 	return []byte("-ERR unknown command\r\n")
+}
+func isAllowedInSubscribedMode(command string) bool {
+	switch command {
+	case "SUBSCRIBE",
+		"UNSUBSCRIBE",
+		"PSUBSCRIBE",
+		"PUNSUBSCRIBE",
+		"PING",
+		"QUIT":
+		return true
+	default:
+		return false
+	}
 }

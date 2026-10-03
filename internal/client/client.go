@@ -12,6 +12,7 @@ type Client struct {
 	isMulti     bool
 	watchedKeys map[string]uint64
 	subscriptions map[string]struct{}
+	subscribed bool
 }
 
 
@@ -23,6 +24,7 @@ func NewClient(conn net.Conn) *Client {
 		queue:       util.NewQueue(),
 		watchedKeys: make(map[string]uint64),
 		subscriptions: make(map[string]struct{}),
+		subscribed: false,
 	}
 }
 
@@ -57,4 +59,12 @@ func (c *Client) WatchedKeys() map[string]uint64 {
 
 func (c *Client) Subscriptions() map[string]struct{} {
 	return c.subscriptions
+}
+
+func (c *Client)IsSubscribed()bool{
+	return c.subscribed
+}
+
+func (c*Client)SetSubscribed(is bool){
+	c.subscribed=is
 }

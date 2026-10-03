@@ -20,6 +20,7 @@ func HandleSubscribeCommand(commands []string,client *client.Client,storage stor
 	storage.AddSubscriber(channel, client)
 
 	client.Subscriptions()[channel] = struct{}{}
+	client.SetSubscribed(true)
 
 	count := len(client.Subscriptions())
 
