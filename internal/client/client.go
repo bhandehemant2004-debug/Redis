@@ -11,6 +11,7 @@ type Client struct {
 	queue       util.Queue
 	isMulti     bool
 	watchedKeys map[string]uint64
+	subscriptions map[string]struct{}
 }
 
 
@@ -21,8 +22,10 @@ func NewClient(conn net.Conn) *Client {
 		isMulti:     false,
 		queue:       util.NewQueue(),
 		watchedKeys: make(map[string]uint64),
+		subscriptions: make(map[string]struct{}),
 	}
 }
+
 
 func (client *Client) Close() {
 	client.conn.Close()
@@ -52,14 +55,6 @@ func (c *Client) WatchedKeys() map[string]uint64 {
 	return c.watchedKeys
 }
 
-// func (c *Client) HasWatchedKeyChanged(storage store.Storage) bool {
-// 	for key, watchedVersion := range c.watchedKeys {
-// 		currentVersion := storage.GetVersion(key)
-
-// 		if currentVersion != watchedVersion {
-// 			return true
-// 		}
-// 	}
-
-// 	return false
-// }
+func (c *Client) Subscriptions() map[string]struct{} {
+	return c.subscriptions
+}
