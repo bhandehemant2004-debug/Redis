@@ -1,13 +1,15 @@
 package command
 
 import (
+	"strconv"
+
 	"github.com/codecrafters-io/redis-starter-go/internal/client"
 	"github.com/codecrafters-io/redis-starter-go/internal/obj"
 	"github.com/codecrafters-io/redis-starter-go/internal/store"
 )
 
 
-func HandleSubscribeCommand(commands []string,client *client.Client,storage store.Storage,) []string {
+func HandleSubscribeCommand(commands []string,client *client.Client,storage store.Storage,) []byte {
 
 	channel := commands[1]
 
@@ -17,9 +19,12 @@ func HandleSubscribeCommand(commands []string,client *client.Client,storage stor
 
 	storage.AddSubscriber(channel, client)
 
-	ans := []string{"subscribe", channel, "1"}
-
-
-	return ans 
+	return []byte(
+		"*3\r\n" +
+			"$9\r\nsubscribe\r\n" +
+			"$" + strconv.Itoa(len(channel)) + "\r\n" +
+			channel + "\r\n" +
+			":1\r\n",
+	)
 
 }

@@ -112,8 +112,7 @@ func handleconnection(client *client.Client, server *Server) {
 			rdb.SendRDB(client.Conn(),result)
 		case "SUBSCRIBE":
 			result := command.HandleSubscribeCommand(commands,client,server.storage)
-			response := protocol.ResponseArray(result)
-			client.WriteResponse([]byte(response))
+			client.WriteResponse(result)
 		default:
 			if client.IsMulti() {
 				client.Queue().Push(commands)
