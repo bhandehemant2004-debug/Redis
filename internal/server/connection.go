@@ -119,6 +119,9 @@ func handleconnection(client *client.Client, server *Server) {
 		case "SUBSCRIBE":
 			result := command.HandleSubscribeCommand(commands,client,server.storage)
 			client.WriteResponse(result)
+		case "PUBLISH":
+			result := command.HandlePublisCommand(commands,client,server.storage)
+			client.WriteResponse(result)
 		default:
 			if client.IsMulti() {
 				client.Queue().Push(commands)
