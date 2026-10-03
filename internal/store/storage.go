@@ -3,6 +3,8 @@ package store
 import (
 	"time"
 
+	"github.com/codecrafters-io/redis-starter-go/internal/client"
+	"github.com/codecrafters-io/redis-starter-go/internal/obj"
 	"github.com/codecrafters-io/redis-starter-go/internal/util"
 )
 
@@ -22,6 +24,11 @@ type Storage interface {
 	GetVersion(key string)uint64
 	SetVersion(key string , version uint64 )
 	IncrementVersion(key string)
+	HasWatchedKeyChanged(mpp map[string]uint64) bool
+	AddSubscriber(channel string, client *client.Client)
+	GetSubscribers(channel string) (obj.PubSub, bool)
+	RemoveSubscriber(channel string, client *client.Client)
+	DeleteChannel(channel string)
 }
 
 
@@ -30,6 +37,9 @@ type MemoryStorage struct {
 	blocked map[string][]*util.Waiter
 	streamBlocked map[string][]*util.StreamWaiter
 	versions map[string]uint64
+	pubsub map[string]obj.PubSub
+
+	
 }
 
 func NewMemoryStorage() *MemoryStorage {
@@ -38,6 +48,7 @@ func NewMemoryStorage() *MemoryStorage {
 		blocked: make(map[string][]*util.Waiter),
 		streamBlocked: make(map[string][]*util.StreamWaiter),
 		versions: make(map[string]uint64),
+		pubsub: make(map[string]obj.PubSub),
 	}
 }
 
@@ -175,3 +186,46 @@ func(s* MemoryStorage)IncrementVersion(key string){
 
 
 
+func (s* MemoryStorage) HasWatchedKeyChanged(mpp map[string]uint64) bool {
+	for key, watchedVersion := range mpp {
+		currentVersion := s.GetVersion(key)
+
+		if currentVersion != watchedVersion {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (s *MemoryStorage) AddSubscriber(channel string,client *client.Client,) {
+	sub, exists := s.pubsub[channel]
+
+	if !exists {
+		sub = *obj.NewPubSub()
+	}
+
+	sub.Subscribers[client] = struct{}{}
+
+	s.pubsub[channel] = sub
+}
+
+func (s *MemoryStorage) GetSubscribers(channel string) (obj.PubSub, bool) {
+	sub, exists := s.pubsub[channel]
+	return sub, exists
+}
+
+func (s *MemoryStorage) RemoveSubscriber(channel string,client *client.Client,) {
+	sub, exists := s.pubsub[channel]
+	if !exists {
+		return
+	}
+	delete(sub.Subscribers, client)
+	if len(sub.Subscribers) == 0 {
+		delete(s.pubsub, channel)
+	}
+}
+
+func (s *MemoryStorage) DeleteChannel(channel string) {
+	delete(s.pubsub, channel)
+}

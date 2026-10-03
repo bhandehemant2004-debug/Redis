@@ -3,7 +3,6 @@ package client
 import (
 	"net"
 
-	"github.com/codecrafters-io/redis-starter-go/internal/store"
 	"github.com/codecrafters-io/redis-starter-go/internal/util"
 )
 
@@ -53,14 +52,14 @@ func (c *Client) WatchedKeys() map[string]uint64 {
 	return c.watchedKeys
 }
 
-func (c *Client) HasWatchedKeyChanged(storage store.Storage) bool {
-	for key, watchedVersion := range c.watchedKeys {
-		currentVersion := storage.GetVersion(key)
+// func (c *Client) HasWatchedKeyChanged(storage store.Storage) bool {
+// 	for key, watchedVersion := range c.watchedKeys {
+// 		currentVersion := storage.GetVersion(key)
 
-		if currentVersion != watchedVersion {
-			return true
-		}
-	}
+// 		if currentVersion != watchedVersion {
+// 			return true
+// 		}
+// 	}
 
-	return false
-}
+// 	return false
+// }

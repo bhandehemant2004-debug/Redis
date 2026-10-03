@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"strings"
-
 	"github.com/codecrafters-io/redis-starter-go/internal/client"
 	"github.com/codecrafters-io/redis-starter-go/internal/command"
 	"github.com/codecrafters-io/redis-starter-go/internal/protocol"
@@ -42,7 +41,7 @@ func handleconnection(client *client.Client, server *Server) {
 				client.WriteResponse([]byte("-ERR EXEC without MULTI\r\n"))
 				continue
 			}
-			if client.HasWatchedKeyChanged(server.storage) {
+			if server.storage.HasWatchedKeyChanged(client.WatchedKeys()) {
 				fmt.Println("WATCH conflict detected")
 
 				client.Queue().Clear()
@@ -111,6 +110,10 @@ func handleconnection(client *client.Client, server *Server) {
 			client.WriteResponse([]byte("+FULLRESYNC "+server.masterReplID +" 0\r\n"))
 			result ,_ := rdb.EncodeRDB(&server.storage)
 			rdb.SendRDB(client.Conn(),result)
+		case "SUBSCRIBE":
+			result := command.HandleSubscribeCommand(commands,client,server.storage)
+			response := protocol.ResponseArray(result)
+			client.WriteResponse([]byte(response))
 		default:
 			if client.IsMulti() {
 				client.Queue().Push(commands)
@@ -222,6 +225,7 @@ func Execute(commands []string, server *Server) []byte {
 		response := command.HandleIncrCommand(commands, server.storage)
 		return ([]byte(response + "\r\n"))
 
+		
 	default:
 		return []byte("-ERR unknown command\r\n")
 	}
