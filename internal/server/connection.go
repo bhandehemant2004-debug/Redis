@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"strings"
+
 	"github.com/codecrafters-io/redis-starter-go/internal/client"
 	"github.com/codecrafters-io/redis-starter-go/internal/command"
 	"github.com/codecrafters-io/redis-starter-go/internal/protocol"
@@ -121,6 +122,9 @@ func handleconnection(client *client.Client, server *Server) {
 			client.WriteResponse(result)
 		case "PUBLISH":
 			result := command.HandlePublisCommand(commands,client,server.storage)
+			client.WriteResponse(result)
+		case "UNSUBSCRIBE":
+			result := command.HandleUnsubscribeCommand(commands,client,server.storage)
 			client.WriteResponse(result)
 		default:
 			if client.IsMulti() {
