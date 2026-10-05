@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"strings"
-
 	"github.com/codecrafters-io/redis-starter-go/internal/client"
 	"github.com/codecrafters-io/redis-starter-go/internal/command"
 	"github.com/codecrafters-io/redis-starter-go/internal/protocol"
